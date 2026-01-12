@@ -134,7 +134,7 @@ export function CreateTeamSheet({ open, onOpenChange, takenTeamNames }: CreateTe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader className="pb-4">
           <div className="flex items-center justify-center mb-2">
             <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">

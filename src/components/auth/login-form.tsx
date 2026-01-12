@@ -63,8 +63,8 @@ export function LoginForm() {
           visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
         }}
       >
-        <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-        <p className="text-white/60 text-sm">Log in to your account</p>
+        <h1 className="text-2xl font-bold text-white mb-2">Ready to play some cornhole?</h1>
+        <p className="text-white/60 text-sm">Login to get started</p>
       </motion.div>
 
       <motion.form

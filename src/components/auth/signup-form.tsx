@@ -98,8 +98,8 @@ export function SignupForm() {
               visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
             }}
           >
-            <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-white/60 text-sm">Sign up to join the tournament</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Sign Up</h1>
+            <p className="text-white/60 text-sm">Join the tournament happening on January 29th</p>
           </motion.div>
 
           <motion.form
@@ -179,7 +179,7 @@ export function SignupForm() {
                   Creating account...
                 </>
               ) : (
-                "Create Account"
+                "Sign Up"
               )}
             </motion.button>
 

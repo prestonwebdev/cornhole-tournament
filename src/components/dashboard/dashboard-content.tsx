@@ -7,7 +7,8 @@ import { InviteLinkShare } from "@/components/team/invite-link-share";
 import { CountdownTimer } from "@/components/countdown/countdown-timer";
 import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 import { TeamManagementSheet } from "@/components/team/team-management-sheet";
-import { Users, UserPlus, CheckCircle, Settings } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Settings, Globe } from "lucide-react";
+import Link from "next/link";
 
 interface Profile {
   id: string;
@@ -33,9 +34,10 @@ interface DashboardContentProps {
   profile: Profile | null;
   team: Team | null;
   takenTeamNames: string[];
+  openTeamsCount: number;
 }
 
-export function DashboardContent({ profile, team, takenTeamNames }: DashboardContentProps) {
+export function DashboardContent({ profile, team, takenTeamNames, openTeamsCount }: DashboardContentProps) {
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [teamManagementSheetOpen, setTeamManagementSheetOpen] = useState(false);
 
@@ -247,6 +249,21 @@ export function DashboardContent({ profile, team, takenTeamNames }: DashboardCon
               Create a Team
             </Button>
           </motion.div>
+          {openTeamsCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Link
+                href="/teams?filter=open"
+                className="flex items-center justify-center gap-2 text-white/60 hover:text-white transition-colors py-2"
+              >
+                <Globe className="h-4 w-4" />
+                <span className="text-sm">{openTeamsCount} open team{openTeamsCount !== 1 ? 's' : ''}</span>
+              </Link>
+            </motion.div>
+          )}
         </motion.div>
       )}
 

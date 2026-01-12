@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { Users, CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
+import { CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
 import { JoinTeamSheet } from "@/components/teams/join-team-sheet";
 import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 
@@ -38,11 +39,14 @@ const filterOptions: { value: FilterType; label: string; icon: React.ReactNode }
 ];
 
 export function TeamsContent({ teams, userHasTeam, takenTeamNames }: TeamsContentProps) {
+  const searchParams = useSearchParams();
+  const initialFilter = searchParams.get("filter") as FilterType | null;
+
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [activeFilter, setActiveFilter] = useState<FilterType>(initialFilter || "all");
 
   // Helper to get player display name
   const getPlayerName = (player: Player | null) => {

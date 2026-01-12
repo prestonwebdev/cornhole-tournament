@@ -12,12 +12,14 @@ export default async function DashboardPage() {
   ]);
 
   const takenTeamNames = allTeams.map((t) => t.name);
+  const openTeamsCount = allTeams.filter((t) => t.is_open && !t.player2_id).length;
 
   return (
     <DashboardContent
       profile={profile}
       team={team}
       takenTeamNames={takenTeamNames}
+      openTeamsCount={openTeamsCount}
     />
   );
 }

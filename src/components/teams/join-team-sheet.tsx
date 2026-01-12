@@ -58,7 +58,7 @@ export function JoinTeamSheet({ team, open, onOpenChange, userHasTeam }: JoinTea
         description: `You are now a member of ${team.name}`,
       });
       onOpenChange(false);
-      router.push(`/team/${team.id}`);
+      router.refresh();
     }
   }
 

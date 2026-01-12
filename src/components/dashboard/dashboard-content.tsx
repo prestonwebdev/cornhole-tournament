@@ -7,7 +7,7 @@ import { InviteLinkShare } from "@/components/team/invite-link-share";
 import { CountdownTimer } from "@/components/countdown/countdown-timer";
 import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 import { TeamManagementSheet } from "@/components/team/team-management-sheet";
-import { Users, UserPlus, CheckCircle, Settings, Globe } from "lucide-react";
+import { Users, UserPlus, CheckCircle, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface Profile {
@@ -232,9 +232,9 @@ export function DashboardContent({ profile, team, takenTeamNames, openTeamsCount
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <h2 className="text-xl font-semibold text-white">No Team Yet</h2>
+            <h2 className="text-xl font-semibold text-white">You aren&apos;t on a team yet!</h2>
             <p className="text-white/60 text-sm mt-1">
-              Create a team or join one using an invite link
+              Join a team or create a new one.
             </p>
           </motion.div>
           <motion.div
@@ -259,7 +259,7 @@ export function DashboardContent({ profile, team, takenTeamNames, openTeamsCount
                 href="/teams?filter=open"
                 className="flex items-center justify-center gap-2 text-white/60 hover:text-white transition-colors py-2"
               >
-                <Globe className="h-4 w-4" />
+                <div className="w-4 h-4 rounded-full border-2 border-dashed border-current" />
                 <span className="text-sm">{openTeamsCount} open team{openTeamsCount !== 1 ? 's' : ''}</span>
               </Link>
             </motion.div>

@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { signIn } from "@/lib/actions/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { CornholeIcon } from "@/components/icons/cornhole-icon";
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,6 +64,14 @@ export function LoginForm() {
           visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
         }}
       >
+        <motion.div
+          className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 15 }}
+        >
+          <CornholeIcon className="h-8 w-8 text-white/60" />
+        </motion.div>
         <h1 className="text-2xl font-bold text-white mb-2">Ready to play some cornhole?</h1>
         <p className="text-white/60 text-sm">Login to get started</p>
       </motion.div>

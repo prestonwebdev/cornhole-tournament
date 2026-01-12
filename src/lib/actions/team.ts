@@ -103,7 +103,8 @@ export async function createTeam(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
-  redirect("/dashboard");
+
+  return { success: true };
 }
 
 export async function joinTeam(token: string) {

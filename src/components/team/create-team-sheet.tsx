@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { createTeam } from "@/lib/actions/team";
 import { useToast } from "@/components/ui/use-toast";
@@ -79,6 +80,7 @@ export function CreateTeamSheet({ open, onOpenChange, takenTeamNames }: CreateTe
   const [teamName, setTeamName] = useState("");
   const [currentSuggestion, setCurrentSuggestion] = useState("");
   const { toast } = useToast();
+  const router = useRouter();
 
   // Filter out taken names
   const availableNames = TEAM_NAME_SUGGESTIONS.filter(
@@ -129,6 +131,8 @@ export function CreateTeamSheet({ open, onOpenChange, takenTeamNames }: CreateTe
       });
     } else {
       onOpenChange(false);
+      router.push("/dashboard");
+      router.refresh();
     }
   }
 

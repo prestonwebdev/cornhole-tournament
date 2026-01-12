@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
+import { Users, CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
 import { JoinTeamSheet } from "@/components/teams/join-team-sheet";
 import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 

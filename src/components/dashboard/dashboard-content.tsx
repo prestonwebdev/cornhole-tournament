@@ -40,16 +40,22 @@ export function DashboardContent({ profile, team, takenTeamNames }: DashboardCon
   const [teamManagementSheetOpen, setTeamManagementSheetOpen] = useState(false);
 
   // Get display name with multiple fallbacks
+  // Priority: team player data (most reliable) -> profile -> email username
   const getDisplayName = () => {
+    // First try team player data (this is working correctly per user feedback)
+    if (team && profile) {
+      if (team.player1?.id === profile.id) {
+        if (team.player1.display_name) return team.player1.display_name;
+        if (team.player1.email) return team.player1.email.split("@")[0];
+      }
+      if (team.player2?.id === profile.id) {
+        if (team.player2.display_name) return team.player2.display_name;
+        if (team.player2.email) return team.player2.email.split("@")[0];
+      }
+    }
+    // Then try profile data
     if (profile?.display_name) return profile.display_name;
     if (profile?.email) return profile.email.split("@")[0];
-    // Try to get from team player data
-    if (team?.player1?.id === profile?.id && team?.player1?.display_name) {
-      return team.player1.display_name;
-    }
-    if (team?.player2?.id === profile?.id && team?.player2?.display_name) {
-      return team.player2.display_name;
-    }
     return "Player";
   };
   const displayName = getDisplayName();
@@ -98,19 +104,9 @@ export function DashboardContent({ profile, team, takenTeamNames }: DashboardCon
           }}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
-              >
-                <Users className="h-6 w-6 text-white" />
-              </motion.div>
-              <div>
-                <h2 className="text-xl font-semibold text-white">{team.name}</h2>
-                <p className="text-white/60 text-sm">Your team</p>
-              </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">{team.name}</h2>
+              <p className="text-white/60 text-sm">Your team</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">

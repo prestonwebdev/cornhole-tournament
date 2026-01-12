@@ -11,8 +11,8 @@ interface TimeLeft {
   seconds: number;
 }
 
-// Target: January 29th, 2026 at 7:00 PM (local time)
-const TARGET_DATE = new Date("2026-01-29T19:00:00");
+// Target: January 29th, 2026 at 6:30 PM (local time)
+const TARGET_DATE = new Date("2026-01-29T18:30:00");
 
 function calculateTimeLeft(): TimeLeft {
   const now = new Date();
@@ -134,7 +134,7 @@ export function CountdownTimer() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
-        January 29th, 2026 at 7:00 PM
+        January 29th, 2026 at 6:30 PM
       </motion.p>
     </motion.div>
   );

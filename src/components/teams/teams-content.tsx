@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Users, User, CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
+import { Users, CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
 import { JoinTeamSheet } from "@/components/teams/join-team-sheet";
 import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 
@@ -24,7 +24,6 @@ interface Team {
 
 interface TeamsContentProps {
   teams: Team[];
-  unassignedPlayers: Player[];
   userHasTeam: boolean;
   takenTeamNames: string[];
 }
@@ -34,12 +33,11 @@ type FilterType = "all" | "open" | "invite" | "complete" | "free-agents";
 const filterOptions: { value: FilterType; label: string; icon: React.ReactNode }[] = [
   { value: "all", label: "All", icon: null },
   { value: "open", label: "Open", icon: <Globe className="h-3 w-3" /> },
-  { value: "invite", label: "Invite Only", icon: <Lock className="h-3 w-3" /> },
+  { value: "invite", label: "Pending Invites", icon: <Lock className="h-3 w-3" /> },
   { value: "complete", label: "Full Teams", icon: <CheckCircle className="h-3 w-3" /> },
-  { value: "free-agents", label: "Open Players", icon: <User className="h-3 w-3" /> },
 ];
 
-export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamNames }: TeamsContentProps) {
+export function TeamsContent({ teams, userHasTeam, takenTeamNames }: TeamsContentProps) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -57,7 +55,7 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
     const query = searchQuery.toLowerCase().trim();
 
     // Filter teams
-    let filteredTeams = teams.filter((team) => {
+    const filteredTeams = teams.filter((team) => {
       // Search filter
       if (query) {
         const teamNameMatch = team.name.toLowerCase().includes(query);
@@ -70,21 +68,6 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
       if (activeFilter === "open") return team.is_open && !team.player2_id;
       if (activeFilter === "invite") return !team.is_open && !team.player2_id;
       if (activeFilter === "complete") return team.player1_id && team.player2_id;
-      if (activeFilter === "free-agents") return false; // Teams don't show in free agents filter
-
-      return true;
-    });
-
-    // Filter unassigned players
-    let filteredPlayers = unassignedPlayers.filter((player) => {
-      if (query) {
-        const nameMatch = getPlayerName(player).toLowerCase().includes(query);
-        const emailMatch = player.email.toLowerCase().includes(query);
-        if (!nameMatch && !emailMatch) return false;
-      }
-
-      // Only show in "all" or "free-agents" filter
-      if (activeFilter !== "all" && activeFilter !== "free-agents") return false;
 
       return true;
     });
@@ -98,10 +81,9 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
       completeTeams,
       openTeams,
       inviteOnlyTeams,
-      freeAgents: filteredPlayers,
-      totalResults: completeTeams.length + openTeams.length + inviteOnlyTeams.length + filteredPlayers.length,
+      totalResults: completeTeams.length + openTeams.length + inviteOnlyTeams.length,
     };
-  }, [teams, unassignedPlayers, searchQuery, activeFilter]);
+  }, [teams, searchQuery, activeFilter]);
 
   function handleTeamClick(team: Team) {
     if (team.is_open && !team.player2_id) {
@@ -116,32 +98,33 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
 
   return (
     <>
-      <motion.div
-        className="space-y-4"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: {
-            transition: { staggerChildren: 0.1 }
-          }
-        }}
-      >
-        {/* Header */}
+      {/* Sticky Header with Search and Filters */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 pt-4 pb-6 bg-gradient-to-b from-[#1a1a1a] from-85% to-transparent">
         <motion.div
-          className="pt-4 flex items-start justify-between"
+          className="space-y-3"
+          initial="hidden"
+          animate="visible"
           variants={{
-            hidden: { opacity: 0, y: -10 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+            hidden: {},
+            visible: {
+              transition: { staggerChildren: 0.1 }
+            }
           }}
         >
-          <div>
-            <h1 className="text-2xl font-bold text-white">Teams</h1>
-            <p className="text-white/60 text-sm">
-              {teams.length} team{teams.length !== 1 ? "s" : ""} registered
-            </p>
-          </div>
-          {!userHasTeam && (
+          {/* Header */}
+          <motion.div
+            className="flex items-start justify-between"
+            variants={{
+              hidden: { opacity: 0, y: -10 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+            }}
+          >
+            <div>
+              <h1 className="text-2xl font-bold text-white">Teams</h1>
+              <p className="text-white/60 text-sm">
+                {teams.length} team{teams.length !== 1 ? "s" : ""} registered
+              </p>
+            </div>
             <motion.button
               onClick={() => setCreateSheetOpen(true)}
               className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
@@ -152,60 +135,72 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
             >
               <Plus className="h-6 w-6 text-white" />
             </motion.button>
-          )}
-        </motion.div>
+          </motion.div>
 
-        {/* Search Bar */}
-        <motion.div
-          className="relative"
-          variants={{
-            hidden: { opacity: 0, y: 10 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-          }}
-        >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
-          <input
-            type="text"
-            placeholder="Search teams or players..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent"
-          />
-          {searchQuery && (
-            <button
-              onClick={clearSearch}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10 transition-colors"
-            >
-              <X className="h-4 w-4 text-white/40" />
-            </button>
-          )}
-        </motion.div>
+          {/* Search Bar */}
+          <motion.div
+            className="relative"
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+            }}
+          >
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
+            <input
+              type="text"
+              placeholder="Search teams..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-10 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <X className="h-4 w-4 text-white/40" />
+              </button>
+            )}
+          </motion.div>
 
-        {/* Filter Pills */}
-        <motion.div
-          className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide"
-          variants={{
-            hidden: { opacity: 0, y: 10 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.4, delay: 0.05 } }
-          }}
-        >
-          {filterOptions.map((option) => (
-            <motion.button
-              key={option.value}
-              onClick={() => setActiveFilter(option.value)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeFilter === option.value
-                  ? "bg-white text-[#1a1a1a]"
-                  : "bg-white/5 text-white/60 hover:bg-white/10"
-              }`}
-              whileTap={{ scale: 0.95 }}
-            >
-              {option.icon}
-              {option.label}
-            </motion.button>
-          ))}
+          {/* Filter Pills */}
+          <motion.div
+            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.4, delay: 0.05 } }
+            }}
+          >
+            {filterOptions.map((option) => (
+              <motion.button
+                key={option.value}
+                onClick={() => setActiveFilter(option.value)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeFilter === option.value
+                    ? "bg-white text-[#1a1a1a]"
+                    : "bg-white/5 text-white/60 hover:bg-white/10"
+                }`}
+                whileTap={{ scale: 0.95 }}
+              >
+                {option.icon}
+                {option.label}
+              </motion.button>
+            ))}
+          </motion.div>
         </motion.div>
+      </div>
 
+      <motion.div
+        className="space-y-4 pt-2"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: { staggerChildren: 0.1 }
+          }
+        }}
+      >
         {/* Search Results Count */}
         {(searchQuery || activeFilter !== "all") && (
           <motion.p
@@ -245,10 +240,7 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
                     whileHover={{ backgroundColor: "rgba(255,255,255,0.08)" }}
                     layout
                   >
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-white/60" />
-                      <h3 className="font-semibold text-white">{team.name}</h3>
-                    </div>
+                    <h3 className="font-semibold text-white">{team.name}</h3>
                     <div className="flex gap-2 text-sm text-white/60">
                       <span>{getPlayerName(team.player1) || "Player 1"}</span>
                       <span>&</span>
@@ -291,12 +283,9 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
                     layout
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-green-400" />
-                        <h3 className="font-semibold text-white">{team.name}</h3>
-                      </div>
+                      <h3 className="font-semibold text-white">{team.name}</h3>
                       <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
-                        Tap to join
+                        Join team
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
@@ -326,7 +315,7 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-yellow-400" />
                 <h2 className="text-sm font-medium text-white/80">
-                  Invite Only ({filteredData.inviteOnlyTeams.length})
+                  Pending Invites ({filteredData.inviteOnlyTeams.length})
                 </h2>
               </div>
               <div className="space-y-2">
@@ -340,56 +329,16 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
                     whileHover={{ backgroundColor: "rgba(255,255,255,0.08)" }}
                     layout
                   >
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-white/40" />
-                      <h3 className="font-semibold text-white">{team.name}</h3>
-                    </div>
+                    <h3 className="font-semibold text-white">{team.name}</h3>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-white/60">
                         {getPlayerName(team.player1) || "Player 1"}
                       </span>
-                      <span className="text-white/30">+</span>
-                      <span className="text-white/40 italic">Needs teammate</span>
+                      <span className="text-white/30">·</span>
+                      <span className="text-white/40 italic">Waiting for teammate to join</span>
                     </div>
                   </motion.div>
                 ))}
-              </div>
-            </motion.section>
-          )}
-        </AnimatePresence>
-
-        {/* Free Agents */}
-        <AnimatePresence mode="popLayout">
-          {filteredData.freeAgents.length > 0 && (
-            <motion.section
-              className="space-y-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-blue-400" />
-                <h2 className="text-sm font-medium text-white/80">
-                  Open Players ({filteredData.freeAgents.length})
-                </h2>
-              </div>
-              <div className="bg-white/5 rounded-xl p-4">
-                <div className="flex flex-wrap gap-2">
-                  {filteredData.freeAgents.map((player, index) => (
-                    <motion.div
-                      key={player.id}
-                      className="bg-white/10 rounded-lg px-3 py-2 text-sm text-white"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.02, duration: 0.2 }}
-                      whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.15)" }}
-                      layout
-                    >
-                      {getPlayerName(player) || player.email}
-                    </motion.div>
-                  ))}
-                </div>
               </div>
             </motion.section>
           )}
@@ -420,7 +369,7 @@ export function TeamsContent({ teams, unassignedPlayers, userHasTeam, takenTeamN
             ) : (
               <>
                 <Users className="h-12 w-12 text-white/20 mx-auto mb-4" />
-                <p className="text-white/60">No teams or players yet</p>
+                <p className="text-white/60">No teams yet</p>
               </>
             )}
           </motion.div>

@@ -103,7 +103,7 @@ export async function getProfile(): Promise<ProfileWithTeam | null> {
 
   let { data: profile } = await supabase
     .from("profiles")
-    .select("*, team:teams(*)")
+    .select("*, team:teams!profiles_team_id_fkey(*)")
     .eq("id", user.id)
     .single();
 
@@ -116,7 +116,7 @@ export async function getProfile(): Promise<ProfileWithTeam | null> {
         email: user.email!,
         display_name: authDisplayName || null,
       } as never)
-      .select("*, team:teams(*)")
+      .select("*, team:teams!profiles_team_id_fkey(*)")
       .single();
 
     profile = newProfile;
@@ -150,6 +150,12 @@ export async function getProfile(): Promise<ProfileWithTeam | null> {
   // Final fallback - always ensure email is set from auth
   if (!profileData.email && user.email) {
     profileData.email = user.email;
+  }
+
+  // Always ensure display_name has a value for UI display
+  // Priority: profile display_name -> auth display_name -> email username
+  if (!profileData.display_name) {
+    profileData.display_name = authDisplayName || user.email?.split("@")[0] || null;
   }
 
   return profileData;

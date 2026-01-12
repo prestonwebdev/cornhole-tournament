@@ -1,17 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
-import { User, Users } from "lucide-react";
+import { User, Users, BookOpen, ChevronRight } from "lucide-react";
 import { LeaveTeamButton } from "@/components/menu/leave-team-button";
 import { SignOutButton } from "@/components/menu/sign-out-button";
+import { RulesSheet } from "@/components/menu/rules-sheet";
 
 interface Profile {
+  id: string;
+  display_name: string | null;
+  email: string;
+}
+
+interface Player {
+  id: string;
   display_name: string | null;
   email: string;
 }
 
 interface Team {
   name: string;
+  player1: Player | null;
+  player2: Player | null;
 }
 
 interface MenuContentProps {
@@ -20,8 +31,23 @@ interface MenuContentProps {
 }
 
 export function MenuContent({ profile, team }: MenuContentProps) {
+  const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
+
   // Get display name with multiple fallbacks
+  // Priority: team player data (most reliable) -> profile -> email username
   const getDisplayName = () => {
+    // First try team player data
+    if (team && profile) {
+      if (team.player1?.id === profile.id) {
+        if (team.player1.display_name) return team.player1.display_name;
+        if (team.player1.email) return team.player1.email.split("@")[0];
+      }
+      if (team.player2?.id === profile.id) {
+        if (team.player2.display_name) return team.player2.display_name;
+        if (team.player2.email) return team.player2.email.split("@")[0];
+      }
+    }
+    // Then try profile data
     if (profile?.display_name) return profile.display_name;
     if (profile?.email) return profile.email.split("@")[0];
     return "Player";
@@ -97,12 +123,32 @@ export function MenuContent({ profile, team }: MenuContentProps) {
         </motion.div>
       )}
 
-      {/* Actions */}
+      {/* Rules */}
       <motion.div
         className="bg-white/5 rounded-2xl overflow-hidden"
         variants={{
           hidden: { opacity: 0, y: 20 },
           visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.2 } }
+        }}
+      >
+        <button
+          onClick={() => setRulesSheetOpen(true)}
+          className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <BookOpen className="h-5 w-5 text-white/60" />
+            <span className="text-white">Cornhole Rules</span>
+          </div>
+          <ChevronRight className="h-5 w-5 text-white/40" />
+        </button>
+      </motion.div>
+
+      {/* Actions */}
+      <motion.div
+        className="bg-white/5 rounded-2xl overflow-hidden"
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.3 } }
         }}
       >
         <SignOutButton />
@@ -113,12 +159,14 @@ export function MenuContent({ profile, team }: MenuContentProps) {
         className="text-center pt-4"
         variants={{
           hidden: { opacity: 0 },
-          visible: { opacity: 1, transition: { duration: 0.5, delay: 0.3 } }
+          visible: { opacity: 1, transition: { duration: 0.5, delay: 0.4 } }
         }}
       >
         <p className="text-white/30 text-xs">Copperbend Cornhole Tournament</p>
         <p className="text-white/20 text-xs mt-1">Version 1.0</p>
       </motion.div>
+
+      <RulesSheet open={rulesSheetOpen} onOpenChange={setRulesSheetOpen} />
     </motion.div>
   );
 }

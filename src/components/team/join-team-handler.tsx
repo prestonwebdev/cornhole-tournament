@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { joinTeam } from "@/lib/actions/team";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Users, UserPlus, AlertCircle, CheckCircle, User } from "lucide-react";
+import { Loader2, Users, UserPlus, AlertCircle, CheckCircle2 } from "lucide-react";
+import { CornholeIcon } from "@/components/icons/cornhole-icon";
 
 interface TeamData {
   id: string;
@@ -135,21 +136,30 @@ export function JoinTeamHandler({
       <div className="w-full max-w-sm mx-auto bg-white/5 rounded-2xl p-6">
         <div className="text-center mb-6">
           <div className="mx-auto w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-4">
-            <UserPlus className="h-7 w-7 text-white/60" />
+            <CornholeIcon className="h-7 w-7 text-white/60" />
           </div>
-          <h1 className="text-xl font-semibold text-white mb-2">Join {team.name}</h1>
+          <h1 className="text-xl font-semibold text-white mb-2">Play in the Copperbend Cornhole Tournament</h1>
           <p className="text-white/60 text-sm">
-            {team.player1?.display_name || "A player"} invited you to join their team
+            {team.player1?.display_name || "A player"} has invited you to play on their team, &quot;{team.name}&quot;
           </p>
         </div>
 
-        <div className="bg-white/5 rounded-xl p-4 mb-6">
-          <p className="text-xs text-white/40 mb-3">Current team member:</p>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-              <User className="h-4 w-4 text-white/60" />
+        <div className="mb-6">
+          <p className="font-semibold text-white mb-3">{team.name}</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                <span className="text-white/60 font-medium">1</span>
+              </div>
+              <span className="flex-1 text-white">{team.player1?.display_name || team.player1?.email}</span>
+              <CheckCircle2 className="h-6 w-6 text-green-400" />
             </div>
-            <span className="font-medium text-white">{team.player1?.display_name || team.player1?.email}</span>
+            <div className="flex items-center gap-3 border-2 border-dashed border-white/20 rounded-xl p-3">
+              <div className="w-10 h-10 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center">
+                <span className="text-white/40 font-medium">2</span>
+              </div>
+              <span className="text-white/40">Waiting for teammate...</span>
+            </div>
           </div>
         </div>
 
@@ -197,27 +207,30 @@ export function JoinTeamHandler({
     <div className="w-full max-w-sm mx-auto bg-white/5 rounded-2xl p-6">
       <div className="text-center mb-6">
         <div className="mx-auto w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-4">
-          <UserPlus className="h-7 w-7 text-white/60" />
+          <CornholeIcon className="h-7 w-7 text-white/60" />
         </div>
-        <h1 className="text-xl font-semibold text-white mb-2">Join {team.name}</h1>
+        <h1 className="text-xl font-semibold text-white mb-2">Play in the Copperbend Cornhole Tournament</h1>
         <p className="text-white/60 text-sm">
-          {team.player1?.display_name || "A player"} invited you to join their team
+          {team.player1?.display_name || "A player"} has invited you to play on their team, &quot;{team.name}&quot;
         </p>
       </div>
 
-      <div className="bg-white/5 rounded-xl p-4 mb-6 space-y-3">
-        <p className="text-xs text-white/40">Team member:</p>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-            <User className="h-4 w-4 text-white/60" />
+      <div className="mb-6">
+        <p className="font-semibold text-white mb-3">{team.name}</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+              <span className="text-white/60 font-medium">1</span>
+            </div>
+            <span className="flex-1 text-white">{team.player1?.display_name || team.player1?.email}</span>
+            <CheckCircle2 className="h-6 w-6 text-green-400" />
           </div>
-          <span className="font-medium text-white">{team.player1?.display_name || team.player1?.email}</span>
-        </div>
-        <div className="flex items-center gap-3 text-white/40">
-          <div className="w-8 h-8 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
-            <User className="h-4 w-4 text-white/20" />
+          <div className="flex items-center gap-3 border-2 border-dashed border-white/20 rounded-xl p-3">
+            <div className="w-10 h-10 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center">
+              <span className="text-white/40 font-medium">2</span>
+            </div>
+            <span className="text-white/40">Waiting for teammate...</span>
           </div>
-          <span className="text-sm">Waiting for you...</span>
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { joinTeam } from "@/lib/actions/team";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Users, UserPlus, AlertCircle, CheckCircle2, User } from "lucide-react";
+import { Loader2, Users, UserPlus, AlertCircle, CheckCircle, CheckCircle2, User } from "lucide-react";
 import { CornholeIcon } from "@/components/icons/cornhole-icon";
 
 interface TeamData {

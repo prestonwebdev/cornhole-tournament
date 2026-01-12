@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { Users, CheckCircle, Globe, Lock, Search, X, Plus } from "lucide-react";
+import { Users, CheckCircle, Lock, Search, X, Plus } from "lucide-react";
 import { JoinTeamSheet } from "@/components/teams/join-team-sheet";
 import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 
@@ -33,7 +33,7 @@ type FilterType = "all" | "open" | "invite" | "complete" | "free-agents";
 
 const filterOptions: { value: FilterType; label: string; icon: React.ReactNode }[] = [
   { value: "all", label: "All", icon: null },
-  { value: "open", label: "Open", icon: <Globe className="h-3 w-3" /> },
+  { value: "open", label: "Open", icon: <div className="w-3 h-3 rounded-full border-[1.5px] border-dashed border-current" /> },
   { value: "invite", label: "Pending Invites", icon: <Lock className="h-3 w-3" /> },
   { value: "complete", label: "Full Teams", icon: <CheckCircle className="h-3 w-3" /> },
 ];
@@ -268,7 +268,7 @@ export function TeamsContent({ teams, userHasTeam, takenTeamNames }: TeamsConten
               transition={{ duration: 0.3 }}
             >
               <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-green-400" />
+                <div className="w-4 h-4 rounded-full border-2 border-dashed border-green-400" />
                 <h2 className="text-sm font-medium text-white/80">
                   Open Teams ({filteredData.openTeams.length})
                 </h2>

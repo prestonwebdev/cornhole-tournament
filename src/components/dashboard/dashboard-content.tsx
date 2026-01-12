@@ -260,7 +260,7 @@ export function DashboardContent({ profile, team, takenTeamNames, openTeamsCount
                 className="flex items-center justify-center gap-2 text-white/60 hover:text-white transition-colors py-2"
               >
                 <div className="w-4 h-4 rounded-full border-2 border-dashed border-current" />
-                <span className="text-sm">{openTeamsCount} open team{openTeamsCount !== 1 ? 's' : ''}</span>
+                <span className="text-sm">Join an open team ({openTeamsCount} Open)</span>
               </Link>
             </motion.div>
           )}

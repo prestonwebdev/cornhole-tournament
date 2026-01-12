@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Users, Loader2, Globe } from "lucide-react";
+import { Users, Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -89,7 +89,7 @@ export function JoinTeamSheet({ team, open, onOpenChange, userHasTeam }: JoinTea
               <div>
                 <h3 className="font-semibold text-white text-lg">{team.name}</h3>
                 <div className="flex items-center gap-1 text-white/40 text-sm">
-                  <Globe className="h-3 w-3" />
+                  <div className="w-3 h-3 rounded-full border-[1.5px] border-dashed border-current" />
                   <span>Open team</span>
                 </div>
               </div>

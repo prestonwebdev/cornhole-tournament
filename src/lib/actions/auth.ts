@@ -56,7 +56,7 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
-  return { success: true };
+  redirect("/dashboard");
 }
 
 export async function signIn(formData: FormData, redirectTo?: string) {

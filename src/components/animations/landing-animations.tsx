@@ -32,7 +32,7 @@ export function LandingContent() {
         }}
       >
         <p className="text-center text-white/80 text-sm tracking-wide">
-          Copperbend | 2026
+          Copperbend Ward | 2026
         </p>
       </motion.header>
 

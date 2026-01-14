@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { joinTeam } from "@/lib/actions/team";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Users, UserPlus, AlertCircle, CheckCircle, CheckCircle2, User } from "lucide-react";
+import { Loader2, Users, UserPlus, AlertCircle, CheckCircle2, User } from "lucide-react";
 import { CornholeIcon } from "@/components/icons/cornhole-icon";
 
 interface TeamData {
@@ -34,8 +35,8 @@ export function JoinTeamHandler({
   userTeam,
 }: JoinTeamHandlerProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [joined, setJoined] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Team not found
   if (!team) {
@@ -114,27 +115,6 @@ export function JoinTeamHandler({
     );
   }
 
-  // Successfully joined
-  if (joined) {
-    return (
-      <div className="w-full max-w-sm mx-auto bg-white/5 rounded-2xl p-6 text-center">
-        <div className="mx-auto w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-          <CheckCircle className="h-7 w-7 text-green-400" />
-        </div>
-        <h1 className="text-xl font-semibold text-white mb-2">You&apos;re on the team!</h1>
-        <p className="text-white/60 text-sm mb-6">
-          Welcome to {team.name}. Your team is now complete.
-        </p>
-        <Link
-          href={`/team/${team.id}`}
-          className="inline-block w-full py-4 bg-white text-[#1a1a1a] rounded-xl font-medium hover:bg-white/90 transition-colors"
-        >
-          View Your Team
-        </Link>
-      </div>
-    );
-  }
-
   // Not logged in - show auth options
   if (!isLoggedIn) {
     return (
@@ -194,9 +174,9 @@ export function JoinTeamHandler({
   async function handleJoin() {
     setIsLoading(true);
     const result = await joinTeam(token);
-    setIsLoading(false);
 
     if (result.error) {
+      setIsLoading(false);
       toast({
         title: "Failed to join team",
         description: result.error,
@@ -205,7 +185,11 @@ export function JoinTeamHandler({
       return;
     }
 
-    setJoined(true);
+    toast({
+      title: "Joined team!",
+      description: `You are now a member of ${team?.name}`,
+    });
+    router.push("/dashboard");
   }
 
   return (

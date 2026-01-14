@@ -169,6 +169,18 @@ export async function joinTeam(token: string) {
     return { error: updateTeamError.message };
   }
 
+  // Verify the team update actually happened (RLS can silently fail)
+  const { data: verifyTeam } = await supabase
+    .from("teams")
+    .select("player2_id")
+    .eq("id", teamData.id)
+    .single();
+
+  const verifyData = verifyTeam as { player2_id: string | null } | null;
+  if (!verifyData || verifyData.player2_id !== user.id) {
+    return { error: "Failed to join team. Please contact an admin." };
+  }
+
   // Update user's team_id
   const { error: updateProfileError } = await supabase
     .from("profiles")

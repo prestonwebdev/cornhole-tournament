@@ -17,12 +17,15 @@ export function SignupForm() {
   const inviteToken = searchParams.get("token");
   const loginUrl = inviteToken ? `/login?token=${inviteToken}` : "/login";
 
+  // Determine final redirect destination after signup
+  const finalRedirect = inviteToken ? `/join-team/${inviteToken}` : "/dashboard";
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const result = await signUp(formData);
+    const result = await signUp(formData, finalRedirect);
 
     // Only reaches here if there's an error (success redirects)
     setIsLoading(false);

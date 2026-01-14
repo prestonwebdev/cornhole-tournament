@@ -14,19 +14,24 @@ interface TeamData {
   player2: { display_name: string | null; email: string } | null;
 }
 
+interface UserTeam {
+  id: string;
+  name: string;
+}
+
 interface JoinTeamHandlerProps {
   team: TeamData | null;
   token: string;
   isLoggedIn: boolean;
   currentUserId?: string;
-  currentUserTeamId?: string | null;
+  userTeam?: UserTeam | null;
 }
 
 export function JoinTeamHandler({
   team,
   token,
   isLoggedIn,
-  currentUserTeamId,
+  userTeam,
 }: JoinTeamHandlerProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -89,7 +94,7 @@ export function JoinTeamHandler({
   }
 
   // User already on a team
-  if (isLoggedIn && currentUserTeamId) {
+  if (isLoggedIn && userTeam) {
     return (
       <div className="w-full max-w-sm mx-auto bg-white/5 rounded-2xl p-6 text-center">
         <div className="mx-auto w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-4">
@@ -97,7 +102,7 @@ export function JoinTeamHandler({
         </div>
         <h1 className="text-xl font-semibold text-white mb-2">Already on a Team</h1>
         <p className="text-white/60 text-sm mb-6">
-          You&apos;re already on a team. Contact an admin if you need to switch teams.
+          You&apos;re already on &quot;{userTeam.name}&quot;. Contact an admin if you need to switch teams.
         </p>
         <Link
           href="/dashboard"

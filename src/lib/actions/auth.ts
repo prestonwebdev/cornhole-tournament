@@ -28,7 +28,7 @@ const signInSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export async function signUp(formData: FormData) {
+export async function signUp(formData: FormData, redirectTo?: string) {
   const supabase = await createClient();
 
   const result = signUpSchema.safeParse({
@@ -56,7 +56,7 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  redirect(redirectTo || "/dashboard");
 }
 
 export async function signIn(formData: FormData, redirectTo?: string) {

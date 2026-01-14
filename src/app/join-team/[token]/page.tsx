@@ -1,5 +1,5 @@
-import { getTeamByToken } from "@/lib/actions/team";
-import { getUser, getProfile } from "@/lib/actions/auth";
+import { getTeamByToken, getUserTeam } from "@/lib/actions/team";
+import { getUser } from "@/lib/actions/auth";
 import { JoinTeamHandler } from "@/components/team/join-team-handler";
 
 interface JoinTeamPageProps {
@@ -10,10 +10,10 @@ export default async function JoinTeamPage({ params }: JoinTeamPageProps) {
   const { token } = await params;
 
   // Fetch team and user data in parallel
-  const [team, user, profile] = await Promise.all([
+  const [team, user, userTeam] = await Promise.all([
     getTeamByToken(token),
     getUser(),
-    getProfile(),
+    getUserTeam(),
   ]);
 
   return (
@@ -23,7 +23,7 @@ export default async function JoinTeamPage({ params }: JoinTeamPageProps) {
         token={token}
         isLoggedIn={!!user}
         currentUserId={user?.id}
-        currentUserTeamId={profile?.team_id}
+        userTeam={userTeam}
       />
     </div>
   );

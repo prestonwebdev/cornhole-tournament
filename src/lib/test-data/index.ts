@@ -39,12 +39,16 @@ export {
   // Match manipulation
   simulateMatchResult,
   advanceWinner,
-  dropToLosers,
+  dropToConsolation,
+  dropToLosers, // legacy alias
 
   // Pre-built scenarios
   get8TeamFreshBracket,
   get8TeamRound1Complete,
-  get8TeamHalfway,
+  get8TeamSemisComplete,
+  get8TeamFinalsReady,
+  get8TeamComplete,
+  get8TeamHalfway, // legacy alias
   get4TeamFreshBracket,
   get4TeamComplete,
 

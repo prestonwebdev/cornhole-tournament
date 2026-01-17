@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMockBracket, type BracketScenario } from "@/lib/test-data";
-import { Trophy, RotateCcw, Play, ChevronDown, ChevronUp } from "lucide-react";
+import { Trophy, RotateCcw, Play, ChevronDown, ChevronUp, Medal } from "lucide-react";
 
 export default function BracketTestPage() {
   const bracket = useMockBracket("8-team-fresh");
@@ -11,8 +11,7 @@ export default function BracketTestPage() {
   const [scoreB, setScoreB] = useState(15);
 
   const winnersMatches = bracket.getWinnersMatches();
-  const losersMatches = bracket.getLosersMatches();
-  const grandFinals = bracket.getGrandFinals();
+  const consolationMatches = bracket.getConsolationMatches();
   const pendingMatches = bracket.getPendingMatches();
   const completedMatches = bracket.getCompletedMatches();
 
@@ -23,12 +22,12 @@ export default function BracketTestPage() {
     return acc;
   }, {} as Record<number, typeof winnersMatches>);
 
-  // Group losers matches by round
-  const losersRounds = losersMatches.reduce((acc, match) => {
+  // Group consolation matches by round
+  const consolationRounds = consolationMatches.reduce((acc, match) => {
     if (!acc[match.round_number]) acc[match.round_number] = [];
     acc[match.round_number].push(match);
     return acc;
-  }, {} as Record<number, typeof losersMatches>);
+  }, {} as Record<number, typeof consolationMatches>);
 
   return (
     <div className="space-y-6 pb-20">
@@ -36,7 +35,7 @@ export default function BracketTestPage() {
       <div className="pt-4">
         <h1 className="text-2xl font-bold text-white">Bracket Test Playground</h1>
         <p className="text-white/60 text-sm">
-          Test bracket logic with mock data (no database changes)
+          Test consolation bracket logic with mock data (no database changes)
         </p>
       </div>
 
@@ -86,92 +85,87 @@ export default function BracketTestPage() {
         </div>
       </div>
 
-      {/* Winners Bracket */}
+      {/* Championship Bracket - Plays for 1st/2nd */}
       <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-400" />
-          <h2 className="text-sm font-medium text-white/80">Winners Bracket</h2>
-        </div>
-
-        {Object.entries(winnersRounds).map(([round, matches]) => (
-          <div key={`winners-${round}`} className="space-y-2">
-            <p className="text-xs text-white/40 pl-2">Round {round}</p>
-            {matches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                expanded={expandedMatch === match.id}
-                onToggle={() => setExpandedMatch(expandedMatch === match.id ? null : match.id)}
-                scoreA={scoreA}
-                scoreB={scoreB}
-                onScoreAChange={setScoreA}
-                onScoreBChange={setScoreB}
-                onRecordResult={(winnerId) => {
-                  bracket.recordResult(match.id, winnerId, scoreA, scoreB);
-                  setExpandedMatch(null);
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </section>
-
-      {/* Losers Bracket */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-orange-400" />
-          <h2 className="text-sm font-medium text-white/80">Losers Bracket</h2>
-        </div>
-
-        {Object.entries(losersRounds).map(([round, matches]) => (
-          <div key={`losers-${round}`} className="space-y-2">
-            <p className="text-xs text-white/40 pl-2">Round {round}</p>
-            {matches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                expanded={expandedMatch === match.id}
-                onToggle={() => setExpandedMatch(expandedMatch === match.id ? null : match.id)}
-                scoreA={scoreA}
-                scoreB={scoreB}
-                onScoreAChange={setScoreA}
-                onScoreBChange={setScoreB}
-                onRecordResult={(winnerId) => {
-                  bracket.recordResult(match.id, winnerId, scoreA, scoreB);
-                  setExpandedMatch(null);
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </section>
-
-      {/* Grand Finals */}
-      {grandFinals.length > 0 && (
-        <section className="space-y-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-yellow-400" />
-            <h2 className="text-sm font-medium text-white/80">Grand Finals</h2>
+            <h2 className="text-sm font-medium text-white/80">Championship Bracket</h2>
           </div>
-          {grandFinals.map((match) => (
-            <MatchCard
-              key={match.id}
-              match={match}
-              highlight
-              expanded={expandedMatch === match.id}
-              onToggle={() => setExpandedMatch(expandedMatch === match.id ? null : match.id)}
-              scoreA={scoreA}
-              scoreB={scoreB}
-              onScoreAChange={setScoreA}
-              onScoreBChange={setScoreB}
-              onRecordResult={(winnerId) => {
-                bracket.recordResult(match.id, winnerId, scoreA, scoreB);
-                setExpandedMatch(null);
-              }}
-            />
-          ))}
-        </section>
-      )}
+          <span className="text-xs text-white/40">Playing for 1st & 2nd</span>
+        </div>
+
+        {Object.entries(winnersRounds).map(([round, matches]) => {
+          const isFinals = matches.some(m => m.is_finals);
+          const roundLabel = isFinals ? "Finals (1st vs 2nd)" : `Round ${round}`;
+
+          return (
+            <div key={`winners-${round}`} className="space-y-2">
+              <p className="text-xs text-white/40 pl-2">{roundLabel}</p>
+              {matches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  highlight={isFinals}
+                  highlightColor="yellow"
+                  expanded={expandedMatch === match.id}
+                  onToggle={() => setExpandedMatch(expandedMatch === match.id ? null : match.id)}
+                  scoreA={scoreA}
+                  scoreB={scoreB}
+                  onScoreAChange={setScoreA}
+                  onScoreBChange={setScoreB}
+                  onRecordResult={(winnerId) => {
+                    bracket.recordResult(match.id, winnerId, scoreA, scoreB);
+                    setExpandedMatch(null);
+                  }}
+                  placement={isFinals ? { winner: "1st", loser: "2nd" } : undefined}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </section>
+
+      {/* Consolation Bracket - Plays for 3rd/4th */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Medal className="h-4 w-4 text-orange-400" />
+            <h2 className="text-sm font-medium text-white/80">Consolation Bracket</h2>
+          </div>
+          <span className="text-xs text-white/40">Playing for 3rd & 4th</span>
+        </div>
+
+        {Object.entries(consolationRounds).map(([round, matches]) => {
+          const isFinals = matches.some(m => m.is_finals);
+          const roundLabel = isFinals ? "Consolation Finals (3rd vs 4th)" : `Round ${round}`;
+
+          return (
+            <div key={`consolation-${round}`} className="space-y-2">
+              <p className="text-xs text-white/40 pl-2">{roundLabel}</p>
+              {matches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  highlight={isFinals}
+                  highlightColor="orange"
+                  expanded={expandedMatch === match.id}
+                  onToggle={() => setExpandedMatch(expandedMatch === match.id ? null : match.id)}
+                  scoreA={scoreA}
+                  scoreB={scoreB}
+                  onScoreAChange={setScoreA}
+                  onScoreBChange={setScoreB}
+                  onRecordResult={(winnerId) => {
+                    bracket.recordResult(match.id, winnerId, scoreA, scoreB);
+                    setExpandedMatch(null);
+                  }}
+                  placement={isFinals ? { winner: "3rd", loser: "4th" } : undefined}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </section>
 
       {/* Debug: Raw match data */}
       <details className="bg-white/5 rounded-xl p-4">
@@ -189,6 +183,7 @@ export default function BracketTestPage() {
 interface MatchCardProps {
   match: ReturnType<typeof useMockBracket>["matches"][0];
   highlight?: boolean;
+  highlightColor?: "yellow" | "orange";
   expanded: boolean;
   onToggle: () => void;
   scoreA: number;
@@ -196,11 +191,13 @@ interface MatchCardProps {
   onScoreAChange: (score: number) => void;
   onScoreBChange: (score: number) => void;
   onRecordResult: (winnerId: string) => void;
+  placement?: { winner: string; loser: string };
 }
 
 function MatchCard({
   match,
   highlight,
+  highlightColor = "yellow",
   expanded,
   onToggle,
   scoreA,
@@ -208,30 +205,38 @@ function MatchCard({
   onScoreAChange,
   onScoreBChange,
   onRecordResult,
+  placement,
 }: MatchCardProps) {
   const canPlay = match.team_a_id && match.team_b_id && !match.winner_id;
   const isComplete = !!match.winner_id;
+  const borderColor = highlightColor === "yellow" ? "border-yellow-400/30" : "border-orange-400/30";
+  const accentColor = highlightColor === "yellow" ? "text-yellow-400" : "text-orange-400";
 
   return (
     <div
-      className={`rounded-xl overflow-hidden ${highlight ? "border border-yellow-400/30" : ""}`}
+      className={`rounded-xl overflow-hidden ${highlight ? `border ${borderColor}` : ""}`}
     >
       {/* Match header */}
       <div className="text-xs text-white/40 px-4 py-1 bg-white/5 flex justify-between items-center">
         <span>Match {match.match_number} ({match.id})</span>
-        {canPlay && (
-          <button
-            onClick={onToggle}
-            className="flex items-center gap-1 text-green-400 hover:text-green-300"
-          >
-            <Play className="h-3 w-3" />
-            Play
-            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </button>
-        )}
-        {isComplete && (
-          <span className="text-green-400">Complete</span>
-        )}
+        <div className="flex items-center gap-2">
+          {match.is_finals && (
+            <span className={accentColor}>Finals</span>
+          )}
+          {canPlay && (
+            <button
+              onClick={onToggle}
+              className="flex items-center gap-1 text-green-400 hover:text-green-300"
+            >
+              <Play className="h-3 w-3" />
+              Play
+              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
+          )}
+          {isComplete && (
+            <span className="text-green-400">Complete</span>
+          )}
+        </div>
       </div>
 
       {/* Teams */}
@@ -241,9 +246,21 @@ function MatchCard({
             match.winner_id === match.team_a_id ? "bg-green-500/10" : ""
           }`}
         >
-          <span className="font-medium text-white">
-            {match.team_a?.name || "TBD"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-white">
+              {match.team_a?.name || "TBD"}
+            </span>
+            {placement && match.winner_id === match.team_a_id && (
+              <span className="text-xs text-green-400 bg-green-500/20 px-2 py-0.5 rounded">
+                {placement.winner}
+              </span>
+            )}
+            {placement && match.winner_id && match.winner_id !== match.team_a_id && (
+              <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded">
+                {placement.loser}
+              </span>
+            )}
+          </div>
           <span className="font-bold text-white">{match.score_a ?? "-"}</span>
         </div>
         <div className="h-px bg-white/10" />
@@ -252,9 +269,21 @@ function MatchCard({
             match.winner_id === match.team_b_id ? "bg-green-500/10" : ""
           }`}
         >
-          <span className="font-medium text-white">
-            {match.team_b?.name || "TBD"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-white">
+              {match.team_b?.name || "TBD"}
+            </span>
+            {placement && match.winner_id === match.team_b_id && (
+              <span className="text-xs text-green-400 bg-green-500/20 px-2 py-0.5 rounded">
+                {placement.winner}
+              </span>
+            )}
+            {placement && match.winner_id && match.winner_id !== match.team_b_id && (
+              <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded">
+                {placement.loser}
+              </span>
+            )}
+          </div>
           <span className="font-bold text-white">{match.score_b ?? "-"}</span>
         </div>
       </div>

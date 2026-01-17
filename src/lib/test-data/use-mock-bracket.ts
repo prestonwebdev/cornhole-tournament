@@ -5,26 +5,32 @@ import {
   type MatchWithTeams,
   get8TeamFreshBracket,
   get8TeamRound1Complete,
-  get8TeamHalfway,
+  get8TeamSemisComplete,
+  get8TeamFinalsReady,
+  get8TeamComplete,
   get4TeamFreshBracket,
   get4TeamComplete,
   simulateMatchResult,
   advanceWinner,
-  dropToLosers,
+  dropToConsolation,
   mockTeams,
 } from "./mock-data";
 
 export type BracketScenario =
   | "8-team-fresh"
   | "8-team-round1"
-  | "8-team-halfway"
+  | "8-team-semis"
+  | "8-team-finals-ready"
+  | "8-team-complete"
   | "4-team-fresh"
   | "4-team-complete";
 
 const scenarioLoaders: Record<BracketScenario, () => MatchWithTeams[]> = {
   "8-team-fresh": get8TeamFreshBracket,
   "8-team-round1": get8TeamRound1Complete,
-  "8-team-halfway": get8TeamHalfway,
+  "8-team-semis": get8TeamSemisComplete,
+  "8-team-finals-ready": get8TeamFinalsReady,
+  "8-team-complete": get8TeamComplete,
   "4-team-fresh": get4TeamFreshBracket,
   "4-team-complete": get4TeamComplete,
 };
@@ -70,7 +76,7 @@ export function useMockBracket(initialScenario: BracketScenario = "8-team-fresh"
       }
 
       if (options?.dropLoserTo) {
-        updated = dropToLosers(
+        updated = dropToConsolation(
           updated,
           matchId,
           options.dropLoserTo.matchId,
@@ -88,18 +94,24 @@ export function useMockBracket(initialScenario: BracketScenario = "8-team-fresh"
     [matches]
   );
 
-  const getLosersMatches = useCallback(() =>
-    matches.filter(m => m.bracket_type === "losers"),
+  const getConsolationMatches = useCallback(() =>
+    matches.filter(m => m.bracket_type === "consolation"),
     [matches]
   );
 
-  const getGrandFinals = useCallback(() =>
-    matches.filter(m => m.bracket_type === "grand_finals"),
+  // Get finals matches
+  const getWinnersFinals = useCallback(() =>
+    matches.find(m => m.bracket_type === "winners" && m.is_finals),
+    [matches]
+  );
+
+  const getConsolationFinals = useCallback(() =>
+    matches.find(m => m.bracket_type === "consolation" && m.is_finals),
     [matches]
   );
 
   // Get matches by round
-  const getMatchesByRound = useCallback((bracketType: "winners" | "losers" | "grand_finals", round: number) =>
+  const getMatchesByRound = useCallback((bracketType: "winners" | "consolation", round: number) =>
     matches.filter(m => m.bracket_type === bracketType && m.round_number === round),
     [matches]
   );
@@ -137,8 +149,9 @@ export function useMockBracket(initialScenario: BracketScenario = "8-team-fresh"
 
     // Selectors
     getWinnersMatches,
-    getLosersMatches,
-    getGrandFinals,
+    getConsolationMatches,
+    getWinnersFinals,
+    getConsolationFinals,
     getMatchesByRound,
     getMatch,
     getPendingMatches,

@@ -1,6 +1,10 @@
 /**
  * Mock data for testing bracket logic
  * This file provides test data that doesn't touch the database
+ *
+ * BRACKET FORMAT: Consolation Bracket
+ * - Winners Bracket: Plays for 1st and 2nd place
+ * - Consolation Bracket: Plays for 3rd and 4th place
  */
 
 import type { Profile, Team, Match, TeamWithPlayers } from "@/lib/types/database";
@@ -59,7 +63,7 @@ export function getMockTeamsWithPlayers(count?: number): TeamWithPlayers[] {
 
 const TOURNAMENT_ID = "test-tournament-1";
 
-type BracketType = "winners" | "losers" | "grand_finals";
+type BracketType = "winners" | "consolation";
 
 interface MatchWithTeams extends Match {
   team_a: { id: string; name: string } | null;
@@ -75,6 +79,7 @@ function createMatch(
   positionInRound: number,
   teamAId: string | null = null,
   teamBId: string | null = null,
+  isFinals: boolean = false,
 ): Match {
   matchCounter++;
   return {
@@ -92,6 +97,7 @@ function createMatch(
     loser_id: null,
     next_winner_match_id: null,
     next_loser_match_id: null,
+    is_finals: isFinals,
     created_at: "2024-01-01",
     updated_at: "2024-01-01",
   };
@@ -111,73 +117,37 @@ function addTeamData(match: Match): MatchWithTeams {
 }
 
 /**
- * Generate a double elimination bracket for a given number of teams
- * Returns empty matches ready for seeding
+ * Generate a consolation bracket for 8 teams
+ *
+ * Structure:
+ * WINNERS BRACKET (plays for 1st/2nd):
+ *   - Round 1: 4 matches (quarterfinals)
+ *   - Round 2: 2 matches (semifinals)
+ *   - Round 3: 1 match (finals - 1st vs 2nd)
+ *
+ * CONSOLATION BRACKET (plays for 3rd/4th):
+ *   - Round 1: 2 matches (losers from Winners R1)
+ *   - Round 2: 2 matches (Consolation R1 winners vs Winners Semifinal losers)
+ *   - Round 3: 1 match (consolation finals - 3rd vs 4th)
  */
-export function generateEmptyBracket(teamCount: number): MatchWithTeams[] {
-  matchCounter = 0;
-  const matches: Match[] = [];
-
-  // Calculate rounds needed for winners bracket
-  const winnersRounds = Math.ceil(Math.log2(teamCount));
-
-  // Winners Bracket
-  let matchesInRound = Math.ceil(teamCount / 2);
-  for (let round = 1; round <= winnersRounds; round++) {
-    for (let pos = 1; pos <= matchesInRound; pos++) {
-      matches.push(createMatch("winners", round, pos));
-    }
-    matchesInRound = Math.ceil(matchesInRound / 2);
-  }
-
-  // Losers Bracket (roughly 2x winners rounds - 1)
-  const losersRounds = (winnersRounds - 1) * 2;
-  matchesInRound = Math.ceil(teamCount / 4);
-  for (let round = 1; round <= losersRounds; round++) {
-    // Losers bracket has variable matches per round
-    const matchesThisRound = round % 2 === 1 ? matchesInRound : matchesInRound;
-    for (let pos = 1; pos <= matchesThisRound; pos++) {
-      matches.push(createMatch("losers", round, pos));
-    }
-    if (round % 2 === 0) {
-      matchesInRound = Math.ceil(matchesInRound / 2);
-    }
-  }
-
-  // Grand Finals (potentially 2 matches if losers bracket winner wins first)
-  matches.push(createMatch("grand_finals", 1, 1));
-
-  return matches.map(addTeamData);
-}
-
-/**
- * Generate a seeded bracket with teams placed according to standard seeding
- * Seed 1 vs Seed 8, Seed 4 vs Seed 5, Seed 2 vs Seed 7, Seed 3 vs Seed 6
- */
-export function generateSeededBracket(teamCount: number): MatchWithTeams[] {
+export function generateSeededBracket(teamCount: number = 8): MatchWithTeams[] {
   matchCounter = 0;
   const teams = getMockTeamsWithPlayers(teamCount);
   const matches: Match[] = [];
 
-  // Standard seeding order for first round (for 8 teams)
-  // This ensures top seeds don't meet until later rounds
-  const seedOrder8 = [
-    [1, 8], // Seed 1 vs Seed 8
-    [4, 5], // Seed 4 vs Seed 5
-    [2, 7], // Seed 2 vs Seed 7
-    [3, 6], // Seed 3 vs Seed 6
+  // Standard seeding for 8 teams - ensures top seeds don't meet until later
+  // 1v8, 4v5, 2v7, 3v6
+  const seedMatchups = [
+    [1, 8], // Match 1
+    [4, 5], // Match 2
+    [2, 7], // Match 3
+    [3, 6], // Match 4
   ];
 
-  const seedOrder4 = [
-    [1, 4],
-    [2, 3],
-  ];
+  // ========== WINNERS BRACKET ==========
 
-  const seedOrder = teamCount <= 4 ? seedOrder4 : seedOrder8;
-  const actualMatchups = seedOrder.slice(0, Math.ceil(teamCount / 2));
-
-  // Winners Bracket Round 1
-  actualMatchups.forEach(([seedA, seedB], index) => {
+  // Winners Round 1 (Quarterfinals)
+  seedMatchups.forEach(([seedA, seedB], index) => {
     const teamA = teams.find(t => t.seed_number === seedA);
     const teamB = teams.find(t => t.seed_number === seedB);
     matches.push(createMatch(
@@ -185,35 +155,35 @@ export function generateSeededBracket(teamCount: number): MatchWithTeams[] {
       1,
       index + 1,
       teamA?.id || null,
-      teamB?.id || null
+      teamB?.id || null,
     ));
   });
 
-  // Winners Bracket subsequent rounds (empty)
-  const winnersRounds = Math.ceil(Math.log2(teamCount));
-  let matchesInRound = Math.ceil(actualMatchups.length / 2);
-  for (let round = 2; round <= winnersRounds; round++) {
-    for (let pos = 1; pos <= matchesInRound; pos++) {
-      matches.push(createMatch("winners", round, pos));
-    }
-    matchesInRound = Math.ceil(matchesInRound / 2);
-  }
+  // Winners Round 2 (Semifinals)
+  // Match 5: Winner of M1 vs Winner of M2
+  // Match 6: Winner of M3 vs Winner of M4
+  matches.push(createMatch("winners", 2, 1)); // m5
+  matches.push(createMatch("winners", 2, 2)); // m6
 
-  // Losers Bracket (empty)
-  const losersRounds = Math.max(1, (winnersRounds - 1) * 2);
-  matchesInRound = Math.ceil(teamCount / 4);
-  for (let round = 1; round <= losersRounds; round++) {
-    const matchesThisRound = Math.max(1, matchesInRound);
-    for (let pos = 1; pos <= matchesThisRound; pos++) {
-      matches.push(createMatch("losers", round, pos));
-    }
-    if (round % 2 === 0 && matchesInRound > 1) {
-      matchesInRound = Math.ceil(matchesInRound / 2);
-    }
-  }
+  // Winners Round 3 (Finals - 1st vs 2nd)
+  matches.push(createMatch("winners", 3, 1, null, null, true)); // m7 - Finals
 
-  // Grand Finals
-  matches.push(createMatch("grand_finals", 1, 1));
+  // ========== CONSOLATION BRACKET ==========
+
+  // Consolation Round 1
+  // Match 8: Loser of M1 vs Loser of M2
+  // Match 9: Loser of M3 vs Loser of M4
+  matches.push(createMatch("consolation", 1, 1)); // m8
+  matches.push(createMatch("consolation", 1, 2)); // m9
+
+  // Consolation Round 2
+  // Match 10: Winner of M8 vs Loser of M5 (semifinal loser)
+  // Match 11: Winner of M9 vs Loser of M6 (semifinal loser)
+  matches.push(createMatch("consolation", 2, 1)); // m10
+  matches.push(createMatch("consolation", 2, 2)); // m11
+
+  // Consolation Round 3 (Consolation Finals - 3rd vs 4th)
+  matches.push(createMatch("consolation", 3, 1, null, null, true)); // m12 - Consolation Finals
 
   return matches.map(addTeamData);
 }
@@ -279,9 +249,9 @@ export function advanceWinner(
 }
 
 /**
- * Drop loser to losers bracket
+ * Drop loser to consolation bracket
  */
-export function dropToLosers(
+export function dropToConsolation(
   matches: MatchWithTeams[],
   fromMatchId: string,
   toMatchId: string,
@@ -311,6 +281,9 @@ export function dropToLosers(
   });
 }
 
+// Legacy alias for backwards compatibility
+export const dropToLosers = dropToConsolation;
+
 // ============================================================================
 // PRE-BUILT SCENARIOS FOR TESTING
 // ============================================================================
@@ -323,57 +296,100 @@ export function get8TeamFreshBracket(): MatchWithTeams[] {
 }
 
 /**
- * 8-team bracket with round 1 complete
+ * 8-team bracket with Winners Round 1 complete
+ * Higher seeds win their matches
  */
 export function get8TeamRound1Complete(): MatchWithTeams[] {
   let matches = generateSeededBracket(8);
 
   // Winners Round 1 results: higher seeds win
-  matches = simulateMatchResult(matches, "m1", "t1", 21, 15); // Corn Stars beats Kernel Sanders
-  matches = simulateMatchResult(matches, "m2", "t4", 21, 18); // Toss Bosses beats Board Certified
-  matches = simulateMatchResult(matches, "m3", "t2", 21, 12); // Hole in One beats Sack Attack
-  matches = simulateMatchResult(matches, "m4", "t3", 21, 19); // Bag Daddies beats The Corntenders
+  // m1: Seed 1 (Corn Stars) beats Seed 8 (Kernel Sanders)
+  matches = simulateMatchResult(matches, "m1", "t1", 21, 15);
+  // m2: Seed 4 (Toss Bosses) beats Seed 5 (Board Certified)
+  matches = simulateMatchResult(matches, "m2", "t4", 21, 18);
+  // m3: Seed 2 (Hole in One) beats Seed 7 (Sack Attack)
+  matches = simulateMatchResult(matches, "m3", "t2", 21, 12);
+  // m4: Seed 3 (Bag Daddies) beats Seed 6 (The Corntenders)
+  matches = simulateMatchResult(matches, "m4", "t3", 21, 19);
 
-  // Advance winners to Winners R2
-  matches = advanceWinner(matches, "m1", "m5", "team_a");
-  matches = advanceWinner(matches, "m2", "m5", "team_b");
-  matches = advanceWinner(matches, "m3", "m6", "team_a");
-  matches = advanceWinner(matches, "m4", "m6", "team_b");
+  // Advance winners to Winners Semifinals
+  matches = advanceWinner(matches, "m1", "m5", "team_a"); // Corn Stars to m5
+  matches = advanceWinner(matches, "m2", "m5", "team_b"); // Toss Bosses to m5
+  matches = advanceWinner(matches, "m3", "m6", "team_a"); // Hole in One to m6
+  matches = advanceWinner(matches, "m4", "m6", "team_b"); // Bag Daddies to m6
 
-  // Drop losers to Losers R1
-  matches = dropToLosers(matches, "m1", "m7", "team_a");
-  matches = dropToLosers(matches, "m2", "m7", "team_b");
-  matches = dropToLosers(matches, "m3", "m8", "team_a");
-  matches = dropToLosers(matches, "m4", "m8", "team_b");
+  // Drop losers to Consolation Round 1
+  matches = dropToConsolation(matches, "m1", "m8", "team_a"); // Kernel Sanders to m8
+  matches = dropToConsolation(matches, "m2", "m8", "team_b"); // Board Certified to m8
+  matches = dropToConsolation(matches, "m3", "m9", "team_a"); // Sack Attack to m9
+  matches = dropToConsolation(matches, "m4", "m9", "team_b"); // The Corntenders to m9
 
   return matches;
 }
 
 /**
- * 8-team bracket halfway through
+ * 8-team bracket with Winners Semifinals complete
  */
-export function get8TeamHalfway(): MatchWithTeams[] {
+export function get8TeamSemisComplete(): MatchWithTeams[] {
   let matches = get8TeamRound1Complete();
 
-  // Winners R2
-  matches = simulateMatchResult(matches, "m5", "t1", 21, 17); // Corn Stars beats Toss Bosses
-  matches = simulateMatchResult(matches, "m6", "t2", 21, 20); // Hole in One beats Bag Daddies
+  // Winners Semifinals
+  // m5: Corn Stars beats Toss Bosses
+  matches = simulateMatchResult(matches, "m5", "t1", 21, 17);
+  // m6: Hole in One beats Bag Daddies
+  matches = simulateMatchResult(matches, "m6", "t2", 21, 20);
 
-  // Losers R1
-  matches = simulateMatchResult(matches, "m7", "t8", 21, 14); // Kernel Sanders beats Board Certified
-  matches = simulateMatchResult(matches, "m8", "t7", 21, 16); // Sack Attack beats The Corntenders
+  // Consolation Round 1
+  // m8: Kernel Sanders beats Board Certified
+  matches = simulateMatchResult(matches, "m8", "t8", 21, 14);
+  // m9: Sack Attack beats The Corntenders
+  matches = simulateMatchResult(matches, "m9", "t7", 21, 16);
 
-  // Advance winners
-  matches = advanceWinner(matches, "m5", "m9", "team_a"); // Winners Finals
-  matches = advanceWinner(matches, "m6", "m9", "team_b");
+  // Advance to Winners Finals
+  matches = advanceWinner(matches, "m5", "m7", "team_a"); // Corn Stars
+  matches = advanceWinner(matches, "m6", "m7", "team_b"); // Hole in One
 
-  // Losers R2 - Winners R2 losers drop down
-  matches = dropToLosers(matches, "m5", "m10", "team_a");
-  matches = dropToLosers(matches, "m6", "m10", "team_b");
+  // Advance Consolation R1 winners + drop Semifinal losers to Consolation R2
+  matches = advanceWinner(matches, "m8", "m10", "team_a"); // Kernel Sanders
+  matches = dropToConsolation(matches, "m5", "m10", "team_b"); // Toss Bosses (semi loser)
+  matches = advanceWinner(matches, "m9", "m11", "team_a"); // Sack Attack
+  matches = dropToConsolation(matches, "m6", "m11", "team_b"); // Bag Daddies (semi loser)
 
-  // Losers R1 winners advance
-  matches = advanceWinner(matches, "m7", "m10", "team_a");
-  matches = advanceWinner(matches, "m8", "m11", "team_a");
+  return matches;
+}
+
+/**
+ * 8-team bracket near completion (Finals ready)
+ */
+export function get8TeamFinalsReady(): MatchWithTeams[] {
+  let matches = get8TeamSemisComplete();
+
+  // Consolation Round 2
+  // m10: Kernel Sanders beats Toss Bosses
+  matches = simulateMatchResult(matches, "m10", "t8", 21, 19);
+  // m11: Bag Daddies beats Sack Attack
+  matches = simulateMatchResult(matches, "m11", "t3", 21, 18);
+
+  // Advance to Consolation Finals
+  matches = advanceWinner(matches, "m10", "m12", "team_a"); // Kernel Sanders
+  matches = advanceWinner(matches, "m11", "m12", "team_b"); // Bag Daddies
+
+  return matches;
+}
+
+/**
+ * 8-team bracket complete
+ */
+export function get8TeamComplete(): MatchWithTeams[] {
+  let matches = get8TeamFinalsReady();
+
+  // Winners Finals (1st vs 2nd)
+  // m7: Corn Stars beats Hole in One - CHAMPIONS!
+  matches = simulateMatchResult(matches, "m7", "t1", 21, 18);
+
+  // Consolation Finals (3rd vs 4th)
+  // m12: Kernel Sanders beats Bag Daddies for 3rd place
+  matches = simulateMatchResult(matches, "m12", "t8", 21, 17);
 
   return matches;
 }
@@ -382,44 +398,59 @@ export function get8TeamHalfway(): MatchWithTeams[] {
  * 4-team bracket (simpler for testing)
  */
 export function get4TeamFreshBracket(): MatchWithTeams[] {
-  return generateSeededBracket(4);
+  matchCounter = 0;
+  const teams = getMockTeamsWithPlayers(4);
+  const matches: Match[] = [];
+
+  // Winners Round 1 (Semifinals)
+  // 1v4, 2v3
+  const teamA1 = teams.find(t => t.seed_number === 1);
+  const teamB1 = teams.find(t => t.seed_number === 4);
+  const teamA2 = teams.find(t => t.seed_number === 2);
+  const teamB2 = teams.find(t => t.seed_number === 3);
+
+  matches.push(createMatch("winners", 1, 1, teamA1?.id, teamB1?.id)); // m1
+  matches.push(createMatch("winners", 1, 2, teamA2?.id, teamB2?.id)); // m2
+
+  // Winners Finals (1st vs 2nd)
+  matches.push(createMatch("winners", 2, 1, null, null, true)); // m3
+
+  // Consolation Finals (3rd vs 4th) - losers of semifinals
+  matches.push(createMatch("consolation", 1, 1, null, null, true)); // m4
+
+  return matches.map(addTeamData);
 }
 
 /**
- * 4-team bracket complete (for testing grand finals)
+ * 4-team bracket complete
  */
 export function get4TeamComplete(): MatchWithTeams[] {
-  let matches = generateSeededBracket(4);
+  let matches = get4TeamFreshBracket();
 
-  // Winners R1
+  // Winners Round 1 (Semifinals)
   matches = simulateMatchResult(matches, "m1", "t1", 21, 12); // Corn Stars beats Toss Bosses
   matches = simulateMatchResult(matches, "m2", "t2", 21, 18); // Hole in One beats Bag Daddies
 
-  // Advance to Winners Finals
+  // Advance to Finals
   matches = advanceWinner(matches, "m1", "m3", "team_a");
   matches = advanceWinner(matches, "m2", "m3", "team_b");
 
-  // Drop to Losers
-  matches = dropToLosers(matches, "m1", "m4", "team_a");
-  matches = dropToLosers(matches, "m2", "m4", "team_b");
+  // Drop to Consolation Finals
+  matches = dropToConsolation(matches, "m1", "m4", "team_a");
+  matches = dropToConsolation(matches, "m2", "m4", "team_b");
 
   // Winners Finals
-  matches = simulateMatchResult(matches, "m3", "t1", 21, 19); // Corn Stars wins
+  matches = simulateMatchResult(matches, "m3", "t1", 21, 19); // Corn Stars wins!
 
-  // Losers R1
-  matches = simulateMatchResult(matches, "m4", "t3", 21, 15); // Bag Daddies beats Toss Bosses
-
-  // Losers Finals (Winners Finals loser vs Losers winner)
-  matches = dropToLosers(matches, "m3", "m5", "team_a");
-  matches = advanceWinner(matches, "m4", "m5", "team_b");
-  matches = simulateMatchResult(matches, "m5", "t2", 21, 17); // Hole in One comes back
-
-  // Grand Finals
-  matches = advanceWinner(matches, "m3", "m6", "team_a"); // Corn Stars from winners
-  matches = advanceWinner(matches, "m5", "m6", "team_b"); // Hole in One from losers
+  // Consolation Finals
+  matches = simulateMatchResult(matches, "m4", "t3", 21, 15); // Bag Daddies takes 3rd
 
   return matches;
 }
+
+// Legacy aliases
+export const get8TeamHalfway = get8TeamSemisComplete;
+export const generateEmptyBracket = generateSeededBracket;
 
 // ============================================================================
 // EXPORTS SUMMARY

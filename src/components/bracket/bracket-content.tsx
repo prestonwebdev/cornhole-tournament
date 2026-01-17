@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Trophy, Clock } from "lucide-react";
+import { Trophy, Clock, Medal } from "lucide-react";
 import type { Match } from "@/lib/types/database";
 
 type MatchWithTeams = Match & {
@@ -15,10 +15,26 @@ interface BracketContentProps {
 }
 
 export function BracketContent({ matches }: BracketContentProps) {
-  // Group matches by bracket type and round
+  // Group matches by bracket type
   const winnersMatches = matches.filter(m => m.bracket_type === "winners");
-  const losersMatches = matches.filter(m => m.bracket_type === "losers");
-  const grandFinals = matches.filter(m => m.bracket_type === "grand_finals");
+  const consolationMatches = matches.filter(m => m.bracket_type === "consolation");
+
+  // Find finals matches
+  const winnersFinals = winnersMatches.find(m => m.is_finals);
+  const consolationFinals = consolationMatches.find(m => m.is_finals);
+
+  // Group by round
+  const winnersRounds = winnersMatches.reduce((acc, match) => {
+    if (!acc[match.round_number]) acc[match.round_number] = [];
+    acc[match.round_number].push(match);
+    return acc;
+  }, {} as Record<number, MatchWithTeams[]>);
+
+  const consolationRounds = consolationMatches.reduce((acc, match) => {
+    if (!acc[match.round_number]) acc[match.round_number] = [];
+    acc[match.round_number].push(match);
+    return acc;
+  }, {} as Record<number, MatchWithTeams[]>);
 
   return (
     <motion.div
@@ -42,11 +58,11 @@ export function BracketContent({ matches }: BracketContentProps) {
       >
         <h1 className="text-2xl font-bold text-white">Bracket</h1>
         <p className="text-white/60 text-sm">
-          Double Elimination · {matches.length} match{matches.length !== 1 ? "es" : ""}
+          {matches.length} match{matches.length !== 1 ? "es" : ""}
         </p>
       </motion.div>
 
-      {/* Winners Bracket */}
+      {/* Winners Bracket - Plays for 1st/2nd */}
       <motion.section
         className="space-y-3"
         variants={{
@@ -54,22 +70,45 @@ export function BracketContent({ matches }: BracketContentProps) {
           visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
         }}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-green-400" />
-          <h2 className="text-sm font-medium text-white/80">Winners Bracket</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-yellow-400" />
+            <h2 className="text-sm font-medium text-white/80">Championship Bracket</h2>
+          </div>
+          <span className="text-xs text-white/40">Playing for 1st & 2nd</span>
         </div>
-        <div className="space-y-2">
-          {winnersMatches.length === 0 ? (
-            <p className="text-white/40 text-sm">No matches yet</p>
-          ) : (
-            winnersMatches.map((match, index) => (
-              <MatchCard key={match.id} match={match} index={index} />
-            ))
-          )}
-        </div>
+
+        {Object.entries(winnersRounds).map(([round, roundMatches]) => {
+          const roundNum = parseInt(round);
+          const isFinals = roundMatches.some(m => m.is_finals);
+          const roundLabel = isFinals ? "Finals" : `Round ${round}`;
+
+          return (
+            <div key={`winners-${round}`} className="space-y-2">
+              <p className="text-xs text-white/40 pl-2">
+                {roundLabel}
+                {isFinals && <span className="text-yellow-400 ml-2">1st vs 2nd Place</span>}
+              </p>
+              {roundMatches.map((match, index) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  highlight={isFinals}
+                  index={index}
+                  showPlacement={isFinals}
+                  placement={{ winner: "1st", loser: "2nd" }}
+                />
+              ))}
+            </div>
+          );
+        })}
+
+        {winnersMatches.length === 0 && (
+          <p className="text-white/40 text-sm">No matches yet</p>
+        )}
       </motion.section>
 
-      {/* Losers Bracket */}
+      {/* Consolation Bracket - Plays for 3rd/4th */}
       <motion.section
         className="space-y-3"
         variants={{
@@ -77,41 +116,43 @@ export function BracketContent({ matches }: BracketContentProps) {
           visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.1 } }
         }}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-orange-400" />
-          <h2 className="text-sm font-medium text-white/80">Losers Bracket</h2>
-        </div>
-        <div className="space-y-2">
-          {losersMatches.length === 0 ? (
-            <p className="text-white/40 text-sm">No matches yet</p>
-          ) : (
-            losersMatches.map((match, index) => (
-              <MatchCard key={match.id} match={match} index={index} />
-            ))
-          )}
-        </div>
-      </motion.section>
-
-      {/* Grand Finals */}
-      {grandFinals.length > 0 && (
-        <motion.section
-          className="space-y-3"
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.2 } }
-          }}
-        >
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-yellow-400" />
-            <h2 className="text-sm font-medium text-white/80">Grand Finals</h2>
+            <Medal className="h-4 w-4 text-orange-400" />
+            <h2 className="text-sm font-medium text-white/80">Consolation Bracket</h2>
           </div>
-          <div className="space-y-2">
-            {grandFinals.map((match, index) => (
-              <MatchCard key={match.id} match={match} highlight index={index} />
-            ))}
-          </div>
-        </motion.section>
-      )}
+          <span className="text-xs text-white/40">Playing for 3rd & 4th</span>
+        </div>
+
+        {Object.entries(consolationRounds).map(([round, roundMatches]) => {
+          const isFinals = roundMatches.some(m => m.is_finals);
+          const roundLabel = isFinals ? "Consolation Finals" : `Round ${round}`;
+
+          return (
+            <div key={`consolation-${round}`} className="space-y-2">
+              <p className="text-xs text-white/40 pl-2">
+                {roundLabel}
+                {isFinals && <span className="text-orange-400 ml-2">3rd vs 4th Place</span>}
+              </p>
+              {roundMatches.map((match, index) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  highlight={isFinals}
+                  highlightColor="orange"
+                  index={index}
+                  showPlacement={isFinals}
+                  placement={{ winner: "3rd", loser: "4th" }}
+                />
+              ))}
+            </div>
+          );
+        })}
+
+        {consolationMatches.length === 0 && (
+          <p className="text-white/40 text-sm">No matches yet</p>
+        )}
+      </motion.section>
     </motion.div>
   );
 }
@@ -154,26 +195,81 @@ export function BracketEmptyState() {
   );
 }
 
-function MatchCard({ match, highlight, index }: { match: MatchWithTeams; highlight?: boolean; index: number }) {
+interface MatchCardProps {
+  match: MatchWithTeams;
+  highlight?: boolean;
+  highlightColor?: "yellow" | "orange";
+  index: number;
+  showPlacement?: boolean;
+  placement?: { winner: string; loser: string };
+}
+
+function MatchCard({
+  match,
+  highlight,
+  highlightColor = "yellow",
+  index,
+  showPlacement,
+  placement,
+}: MatchCardProps) {
+  const borderColor = highlightColor === "yellow" ? "border-yellow-400/30" : "border-orange-400/30";
+
   return (
     <motion.div
-      className={`rounded-xl overflow-hidden ${highlight ? "border border-yellow-400/30" : ""}`}
+      className={`rounded-xl overflow-hidden ${highlight ? `border ${borderColor}` : ""}`}
       initial={{ opacity: 0, x: -15 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
       whileHover={{ scale: 1.01 }}
     >
-      <div className="text-xs text-white/40 px-4 py-1 bg-white/5">
-        Round {match.round_number} - Match {match.match_number}
+      <div className="text-xs text-white/40 px-4 py-1 bg-white/5 flex justify-between">
+        <span>Match {match.match_number}</span>
+        {match.is_finals && (
+          <span className={highlightColor === "yellow" ? "text-yellow-400" : "text-orange-400"}>
+            Finals
+          </span>
+        )}
       </div>
       <div className="bg-white/5">
-        <div className={`flex justify-between items-center px-4 py-3 transition-colors ${match.winner_id === match.team_a_id ? "bg-green-500/10" : ""}`}>
-          <span className="font-medium text-white">{match.team_a?.name || "TBD"}</span>
+        <div
+          className={`flex justify-between items-center px-4 py-3 transition-colors ${
+            match.winner_id === match.team_a_id ? "bg-green-500/10" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-white">{match.team_a?.name || "TBD"}</span>
+            {showPlacement && match.winner_id === match.team_a_id && placement && (
+              <span className="text-xs text-green-400 bg-green-500/20 px-2 py-0.5 rounded">
+                {placement.winner}
+              </span>
+            )}
+            {showPlacement && match.winner_id && match.winner_id !== match.team_a_id && placement && (
+              <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded">
+                {placement.loser}
+              </span>
+            )}
+          </div>
           <span className="font-bold text-white">{match.score_a ?? "-"}</span>
         </div>
         <div className="h-px bg-white/10" />
-        <div className={`flex justify-between items-center px-4 py-3 transition-colors ${match.winner_id === match.team_b_id ? "bg-green-500/10" : ""}`}>
-          <span className="font-medium text-white">{match.team_b?.name || "TBD"}</span>
+        <div
+          className={`flex justify-between items-center px-4 py-3 transition-colors ${
+            match.winner_id === match.team_b_id ? "bg-green-500/10" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-white">{match.team_b?.name || "TBD"}</span>
+            {showPlacement && match.winner_id === match.team_b_id && placement && (
+              <span className="text-xs text-green-400 bg-green-500/20 px-2 py-0.5 rounded">
+                {placement.winner}
+              </span>
+            )}
+            {showPlacement && match.winner_id && match.winner_id !== match.team_b_id && placement && (
+              <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded">
+                {placement.loser}
+              </span>
+            )}
+          </div>
           <span className="font-bold text-white">{match.score_b ?? "-"}</span>
         </div>
       </div>

@@ -106,7 +106,7 @@ export type Database = {
         Row: {
           id: string;
           tournament_id: string;
-          bracket_type: "winners" | "losers" | "grand_finals";
+          bracket_type: "winners" | "consolation";
           round_number: number;
           match_number: number;
           position_in_round: number;
@@ -118,13 +118,14 @@ export type Database = {
           loser_id: string | null;
           next_winner_match_id: string | null;
           next_loser_match_id: string | null;
+          is_finals: boolean;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           tournament_id: string;
-          bracket_type: "winners" | "losers" | "grand_finals";
+          bracket_type: "winners" | "consolation";
           round_number: number;
           match_number: number;
           position_in_round: number;
@@ -136,13 +137,14 @@ export type Database = {
           loser_id?: string | null;
           next_winner_match_id?: string | null;
           next_loser_match_id?: string | null;
+          is_finals?: boolean;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           tournament_id?: string;
-          bracket_type?: "winners" | "losers" | "grand_finals";
+          bracket_type?: "winners" | "consolation";
           round_number?: number;
           match_number?: number;
           position_in_round?: number;
@@ -154,6 +156,7 @@ export type Database = {
           loser_id?: string | null;
           next_winner_match_id?: string | null;
           next_loser_match_id?: string | null;
+          is_finals?: boolean;
           created_at?: string;
           updated_at?: string;
         };

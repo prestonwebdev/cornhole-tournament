@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 // Types for match with teams
@@ -296,8 +296,11 @@ export async function startMatch(matchId: string) {
     return { error: "You must be on one of the teams to start this match" };
   }
 
+  // Use service client for updates (bypasses RLS after we've validated permissions)
+  const serviceClient = createServiceClient();
+
   // Start the match
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from("matches")
     .update({
       status: "in_progress",
@@ -356,6 +359,7 @@ export async function completeMatch(matchId: string, scoreA: number, scoreB: num
   }
 
   // Verify user is on one of the teams OR is admin
+  console.log("[completeMatch] User team:", userTeamId, "Match teams:", match.team_a_id, match.team_b_id, "isAdmin:", isAdmin);
   if (!isAdmin && userTeamId !== match.team_a_id && userTeamId !== match.team_b_id) {
     return { error: "You must be on one of the teams to complete this match" };
   }
@@ -373,8 +377,12 @@ export async function completeMatch(matchId: string, scoreA: number, scoreB: num
   const winnerId = scoreA > scoreB ? match.team_a_id : match.team_b_id;
   const loserId = scoreA > scoreB ? match.team_b_id : match.team_a_id;
 
+  // Use service client for updates (bypasses RLS after we've validated permissions)
+  const serviceClient = createServiceClient();
+
   // Update the match
-  const { error: updateError } = await supabase
+  console.log("[completeMatch] Attempting to update match:", matchId, "with scores:", scoreA, scoreB);
+  const { error: updateError, data: updateData } = await serviceClient
     .from("matches")
     .update({
       score_a: scoreA,
@@ -384,9 +392,13 @@ export async function completeMatch(matchId: string, scoreA: number, scoreB: num
       status: "complete",
       completed_at: new Date().toISOString(),
     } as never)
-    .eq("id", matchId);
+    .eq("id", matchId)
+    .select();
+
+  console.log("[completeMatch] Update result:", updateData, "Error:", updateError);
 
   if (updateError) {
+    console.error("[completeMatch] Update failed:", updateError);
     return { error: updateError.message };
   }
 
@@ -395,7 +407,7 @@ export async function completeMatch(matchId: string, scoreA: number, scoreB: num
     // Determine which slot (team_a or team_b) based on position
     const slot = match.position_in_round % 2 === 1 ? "team_a_id" : "team_b_id";
 
-    await supabase
+    await serviceClient
       .from("matches")
       .update({ [slot]: winnerId } as never)
       .eq("id", match.next_winner_match_id);
@@ -406,7 +418,7 @@ export async function completeMatch(matchId: string, scoreA: number, scoreB: num
     // Determine which slot based on position
     const slot = match.position_in_round % 2 === 1 ? "team_a_id" : "team_b_id";
 
-    await supabase
+    await serviceClient
       .from("matches")
       .update({ [slot]: loserId } as never)
       .eq("id", match.next_loser_match_id);

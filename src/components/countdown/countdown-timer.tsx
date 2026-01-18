@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
-import { Trophy, Clock } from "lucide-react";
+import { useSimulatedTournamentStart } from "@/lib/hooks/use-demo-mode";
 
 interface TimeLeft {
   days: number;
@@ -11,12 +11,13 @@ interface TimeLeft {
   seconds: number;
 }
 
-// Target: January 29th, 2026 at 6:30 PM (local time)
-const TARGET_DATE = new Date("2026-01-29T18:30:00");
+interface CountdownTimerProps {
+  eventDate?: string | null;
+}
 
-function calculateTimeLeft(): TimeLeft {
+function calculateTimeLeft(targetDate: Date): TimeLeft {
   const now = new Date();
-  const difference = TARGET_DATE.getTime() - now.getTime();
+  const difference = targetDate.getTime() - now.getTime();
 
   if (difference <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -28,6 +29,17 @@ function calculateTimeLeft(): TimeLeft {
     minutes: Math.floor((difference / (1000 * 60)) % 60),
     seconds: Math.floor((difference / 1000) % 60),
   };
+}
+
+function formatEventDate(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }) + " at " + date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function CountdownBox({ value, label, delay }: { value: number; label: string; delay: number }) {
@@ -54,23 +66,35 @@ function CountdownBox({ value, label, delay }: { value: number; label: string; d
   );
 }
 
-export function CountdownTimer() {
+// Default fallback date if none provided
+const DEFAULT_EVENT_DATE = new Date("2026-01-29T18:30:00");
+
+export function CountdownTimer({ eventDate }: CountdownTimerProps) {
+  const simulatedStart = useSimulatedTournamentStart();
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Parse the event date or use default
+  const targetDate = useMemo(() => {
+    if (eventDate) {
+      return new Date(eventDate);
+    }
+    return DEFAULT_EVENT_DATE;
+  }, [eventDate]);
+
   useEffect(() => {
     setMounted(true);
-    setTimeLeft(calculateTimeLeft());
+    setTimeLeft(calculateTimeLeft(targetDate));
 
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      setTimeLeft(calculateTimeLeft(targetDate));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [targetDate]);
 
   // Don't render until mounted to avoid hydration mismatch
-  if (!mounted || !timeLeft) {
+  if (!mounted || !timeLeft || !simulatedStart.isLoaded) {
     return (
       <div className="bg-white/5 rounded-2xl p-5">
         <div className="h-[88px] flex items-center justify-center">
@@ -80,33 +104,54 @@ export function CountdownTimer() {
     );
   }
 
-  const isEventStarted = timeLeft.days === 0 && timeLeft.hours === 0 &&
-                          timeLeft.minutes === 0 && timeLeft.seconds === 0;
+  // Check if tournament has started (considering simulation)
+  const hasStarted = simulatedStart.hasTournamentStarted(eventDate || targetDate.toISOString());
 
-  if (isEventStarted) {
+  // If simulating "not started", always show countdown (even if time has passed)
+  if (simulatedStart.simulatedStart === "not_started") {
     return (
       <motion.div
         className="bg-white/5 rounded-2xl p-5"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
       >
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-yellow-400/10 flex items-center justify-center">
-            <Trophy className="h-5 w-5 text-yellow-400" />
-          </div>
-          <h2 className="text-lg font-semibold text-white">Your Next Match</h2>
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+          <span className="text-xs text-yellow-400 font-medium">Simulating Pre-Start</span>
         </div>
-        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-xl">
-          <Clock className="h-5 w-5 text-white/40" />
-          <div>
-            <p className="text-white/60 text-sm">The bracket hasn&apos;t been created yet.</p>
-            <p className="text-white/40 text-xs mt-1">Check back once the bracket is published!</p>
-          </div>
+        <motion.p
+          className="text-white/60 text-sm text-center mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          Time to start practicing! The tournament starts in
+        </motion.p>
+        <div className="flex justify-center gap-2">
+          <CountdownBox value={timeLeft.days} label="Days" delay={0.1} />
+          <CountdownBox value={timeLeft.hours} label="Hours" delay={0.15} />
+          <CountdownBox value={timeLeft.minutes} label="Mins" delay={0.2} />
+          <CountdownBox value={timeLeft.seconds} label="Secs" delay={0.25} />
         </div>
+        <motion.p
+          className="text-white/40 text-xs text-center mt-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          {formatEventDate(targetDate)}
+        </motion.p>
       </motion.div>
     );
   }
 
+  // If tournament has started (real or simulated), return null - parent will show NextMatchCard
+  if (hasStarted) {
+    return null;
+  }
+
+  // Normal countdown display
   return (
     <motion.div
       className="bg-white/5 rounded-2xl p-5"
@@ -134,7 +179,7 @@ export function CountdownTimer() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
-        January 29th, 2026 at 6:30 PM
+        {formatEventDate(targetDate)}
       </motion.p>
     </motion.div>
   );

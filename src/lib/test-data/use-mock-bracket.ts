@@ -10,6 +10,8 @@ import {
   get8TeamComplete,
   get4TeamFreshBracket,
   get4TeamComplete,
+  generateDynamicBracket,
+  startMatch as startMatchUtil,
   simulateMatchResult,
   advanceWinner,
   dropToConsolation,
@@ -40,17 +42,36 @@ export function useMockBracket(initialScenario: BracketScenario = "8-team-fresh"
     scenarioLoaders[initialScenario]()
   );
   const [scenario, setScenario] = useState<BracketScenario>(initialScenario);
+  const [teamCount, setTeamCountState] = useState<number>(
+    initialScenario.startsWith("4") ? 4 : 8
+  );
 
   // Load a different scenario
   const loadScenario = useCallback((newScenario: BracketScenario) => {
     setMatches(scenarioLoaders[newScenario]());
     setScenario(newScenario);
+    setTeamCountState(newScenario.startsWith("4") ? 4 : 8);
+  }, []);
+
+  // Set team count and generate dynamic bracket
+  const setTeamCount = useCallback((count: number) => {
+    const clampedCount = Math.max(0, Math.min(32, count));
+    setTeamCountState(clampedCount);
+    setMatches(generateDynamicBracket(clampedCount));
+    // Update scenario based on bracket size
+    if (clampedCount <= 4) setScenario("4-team-fresh");
+    else setScenario("8-team-fresh");
   }, []);
 
   // Reset to current scenario's initial state
   const reset = useCallback(() => {
     setMatches(scenarioLoaders[scenario]());
   }, [scenario]);
+
+  // Start a match
+  const startMatch = useCallback((matchId: string, startedBy: string = "p1") => {
+    setMatches(prev => startMatchUtil(prev, matchId, startedBy));
+  }, []);
 
   // Record a match result and optionally auto-advance
   const recordResult = useCallback((
@@ -141,11 +162,14 @@ export function useMockBracket(initialScenario: BracketScenario = "8-team-fresh"
     // State
     matches,
     scenario,
+    teamCount,
 
     // Actions
     loadScenario,
     reset,
+    startMatch,
     recordResult,
+    setTeamCount,
 
     // Selectors
     getWinnersMatches,

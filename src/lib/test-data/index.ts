@@ -35,8 +35,10 @@ export {
   // Bracket generation
   generateEmptyBracket,
   generateSeededBracket,
+  generateDynamicBracket,
 
   // Match manipulation
+  startMatch,
   simulateMatchResult,
   advanceWinner,
   dropToConsolation,

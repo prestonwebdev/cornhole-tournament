@@ -79,7 +79,7 @@ export function LandingContent() {
           >
             <Link href="/signup" className="block">
               <button className="w-full py-4 bg-white text-[#1a1a1a] rounded-xl font-medium text-lg transition-colors">
-                Signup
+                Sign Up
               </button>
             </Link>
           </motion.div>
@@ -89,7 +89,7 @@ export function LandingContent() {
           >
             <Link href="/login" className="block">
               <button className="w-full py-4 bg-transparent text-white font-medium text-lg hover:bg-white/5 transition-colors">
-                Login
+                Log In
               </button>
             </Link>
           </motion.div>

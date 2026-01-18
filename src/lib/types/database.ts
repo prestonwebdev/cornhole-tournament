@@ -119,6 +119,10 @@ export type Database = {
           next_winner_match_id: string | null;
           next_loser_match_id: string | null;
           is_finals: boolean;
+          status: "pending" | "in_progress" | "complete";
+          started_at: string | null;
+          completed_at: string | null;
+          started_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -138,6 +142,10 @@ export type Database = {
           next_winner_match_id?: string | null;
           next_loser_match_id?: string | null;
           is_finals?: boolean;
+          status?: "pending" | "in_progress" | "complete";
+          started_at?: string | null;
+          completed_at?: string | null;
+          started_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -157,6 +165,10 @@ export type Database = {
           next_winner_match_id?: string | null;
           next_loser_match_id?: string | null;
           is_finals?: boolean;
+          status?: "pending" | "in_progress" | "complete";
+          started_at?: string | null;
+          completed_at?: string | null;
+          started_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -179,6 +191,7 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Tournament = Database["public"]["Tables"]["tournament"]["Row"];
 export type Team = Database["public"]["Tables"]["teams"]["Row"];
 export type Match = Database["public"]["Tables"]["matches"]["Row"];
+export type MatchStatus = Match["status"];
 
 // Extended types with relations
 export type TeamWithPlayers = Team & {

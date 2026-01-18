@@ -480,6 +480,32 @@ export async function removeTeammate(teamId: string) {
   return { success: true };
 }
 
+export type RegisteredTeam = {
+  id: string;
+  name: string;
+  seed_number: number | null;
+  player1_id: string | null;
+  player2_id: string | null;
+};
+
+export async function getRegisteredTeams(): Promise<RegisteredTeam[]> {
+  const supabase = await createClient();
+
+  const { data: teams, error } = await supabase
+    .from("teams")
+    .select("id, name, seed_number, player1_id, player2_id")
+    .not("player1_id", "is", null)
+    .not("player2_id", "is", null)
+    .order("seed_number", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
+
+  if (error || !teams) {
+    return [];
+  }
+
+  return teams as RegisteredTeam[];
+}
+
 export async function leaveTeam() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

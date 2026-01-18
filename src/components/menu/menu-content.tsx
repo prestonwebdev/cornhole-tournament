@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { motion } from "motion/react";
-import { User, Users, BookOpen, ChevronRight } from "lucide-react";
+import { User, Users, BookOpen, ChevronRight, FlaskConical, Zap, Loader2 } from "lucide-react";
 import { LeaveTeamButton } from "@/components/menu/leave-team-button";
 import { SignOutButton } from "@/components/menu/sign-out-button";
 import { RulesSheet } from "@/components/menu/rules-sheet";
+import { useDemoMode } from "@/lib/hooks/use-demo-mode";
+import { startTournament, stopTournament } from "@/lib/actions/match";
 
 interface Profile {
   id: string;
   display_name: string | null;
   email: string;
+  is_admin?: boolean;
 }
 
 interface Player {
@@ -28,10 +31,24 @@ interface Team {
 interface MenuContentProps {
   profile: Profile | null;
   team: Team | null;
+  isTournamentLive?: boolean;
 }
 
-export function MenuContent({ profile, team }: MenuContentProps) {
+export function MenuContent({ profile, team, isTournamentLive = false }: MenuContentProps) {
   const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const demoMode = useDemoMode();
+  const isAdmin = profile?.is_admin ?? false;
+
+  const handleToggleTournament = () => {
+    startTransition(async () => {
+      if (isTournamentLive) {
+        await stopTournament();
+      } else {
+        await startTournament();
+      }
+    });
+  };
 
   // Get display name with multiple fallbacks
   // Priority: team player data (most reliable) -> profile -> email username
@@ -142,6 +159,80 @@ export function MenuContent({ profile, team }: MenuContentProps) {
           <ChevronRight className="h-5 w-5 text-white/40" />
         </button>
       </motion.div>
+
+      {/* Admin Section */}
+      {isAdmin && demoMode.isLoaded && (
+        <motion.div
+          className="bg-white/5 rounded-2xl overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="p-4 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-purple-400" />
+              <span className="text-sm font-medium text-purple-300">Admin Controls</span>
+            </div>
+          </div>
+
+          {/* Tournament Live Toggle */}
+          <button
+            onClick={handleToggleTournament}
+            disabled={isPending}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 disabled:opacity-50"
+          >
+            <div className="flex items-center gap-3">
+              {isPending ? (
+                <Loader2 className="h-5 w-5 text-white/60 animate-spin" />
+              ) : (
+                <Zap className={`h-5 w-5 ${isTournamentLive ? "text-green-400" : "text-white/60"}`} />
+              )}
+              <div>
+                <span className="text-white">Tournament Live</span>
+                <p className="text-xs text-white/40">
+                  {isTournamentLive ? "Tournament is active for all players" : "Start the tournament for everyone"}
+                </p>
+              </div>
+            </div>
+            <div
+              className={`w-12 h-7 rounded-full p-1 transition-colors ${
+                isTournamentLive ? "bg-green-500" : "bg-white/20"
+              }`}
+            >
+              <motion.div
+                className="w-5 h-5 rounded-full bg-white"
+                animate={{ x: isTournamentLive ? 20 : 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            </div>
+          </button>
+
+          {/* Demo Mode Toggle */}
+          <button
+            onClick={demoMode.toggle}
+            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <FlaskConical className="h-5 w-5 text-white/60" />
+              <div>
+                <span className="text-white">Demo Mode</span>
+                <p className="text-xs text-white/40">Test bracket with mock data</p>
+              </div>
+            </div>
+            <div
+              className={`w-12 h-7 rounded-full p-1 transition-colors ${
+                demoMode.isEnabled ? "bg-purple-500" : "bg-white/20"
+              }`}
+            >
+              <motion.div
+                className="w-5 h-5 rounded-full bg-white"
+                animate={{ x: demoMode.isEnabled ? 20 : 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            </div>
+          </button>
+        </motion.div>
+      )}
 
       {/* Actions */}
       <motion.div

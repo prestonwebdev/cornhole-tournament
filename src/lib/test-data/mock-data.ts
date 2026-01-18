@@ -13,39 +13,54 @@ import type { Profile, Team, Match, TeamWithPlayers } from "@/lib/types/database
 // MOCK PROFILES (Players)
 // ============================================================================
 
-export const mockProfiles: Profile[] = [
-  { id: "p1", email: "alice@test.com", display_name: "Alice", is_admin: false, team_id: "t1", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p2", email: "bob@test.com", display_name: "Bob", is_admin: false, team_id: "t1", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p3", email: "charlie@test.com", display_name: "Charlie", is_admin: false, team_id: "t2", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p4", email: "diana@test.com", display_name: "Diana", is_admin: false, team_id: "t2", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p5", email: "evan@test.com", display_name: "Evan", is_admin: false, team_id: "t3", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p6", email: "fiona@test.com", display_name: "Fiona", is_admin: false, team_id: "t3", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p7", email: "george@test.com", display_name: "George", is_admin: false, team_id: "t4", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p8", email: "hannah@test.com", display_name: "Hannah", is_admin: false, team_id: "t4", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p9", email: "ivan@test.com", display_name: "Ivan", is_admin: false, team_id: "t5", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p10", email: "julia@test.com", display_name: "Julia", is_admin: false, team_id: "t5", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p11", email: "kevin@test.com", display_name: "Kevin", is_admin: false, team_id: "t6", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p12", email: "laura@test.com", display_name: "Laura", is_admin: false, team_id: "t6", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p13", email: "mike@test.com", display_name: "Mike", is_admin: false, team_id: "t7", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p14", email: "nina@test.com", display_name: "Nina", is_admin: false, team_id: "t7", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p15", email: "oscar@test.com", display_name: "Oscar", is_admin: false, team_id: "t8", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "p16", email: "penny@test.com", display_name: "Penny", is_admin: false, team_id: "t8", created_at: "2024-01-01", updated_at: "2024-01-01" },
+// Generate mock profiles for up to 32 teams (64 players)
+const playerNames = [
+  "Alice", "Bob", "Charlie", "Diana", "Evan", "Fiona", "George", "Hannah",
+  "Ivan", "Julia", "Kevin", "Laura", "Mike", "Nina", "Oscar", "Penny",
+  "Quinn", "Rachel", "Steve", "Tina", "Ulysses", "Vera", "Walter", "Xena",
+  "Yusuf", "Zoe", "Adam", "Bella", "Chris", "Daisy", "Eric", "Faith",
+  "Gary", "Holly", "Ian", "Jade", "Kyle", "Luna", "Mason", "Nora",
+  "Owen", "Paige", "Quentin", "Rosa", "Sam", "Tara", "Uma", "Victor",
+  "Wade", "Willow", "Xavier", "Yara", "Zack", "Amy", "Ben", "Chloe",
+  "Dan", "Emma", "Frank", "Grace", "Henry", "Ivy", "Jack", "Kate"
 ];
+
+export const mockProfiles: Profile[] = playerNames.map((name, index) => ({
+  id: `p${index + 1}`,
+  email: `${name.toLowerCase()}@test.com`,
+  display_name: name,
+  is_admin: false,
+  team_id: `t${Math.floor(index / 2) + 1}`,
+  created_at: "2024-01-01",
+  updated_at: "2024-01-01",
+}));
 
 // ============================================================================
 // MOCK TEAMS
 // ============================================================================
 
-export const mockTeams: Team[] = [
-  { id: "t1", name: "Corn Stars", player1_id: "p1", player2_id: "p2", invite_token: "token1", seed_number: 1, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t2", name: "Hole in One", player1_id: "p3", player2_id: "p4", invite_token: "token2", seed_number: 2, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t3", name: "Bag Daddies", player1_id: "p5", player2_id: "p6", invite_token: "token3", seed_number: 3, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t4", name: "Toss Bosses", player1_id: "p7", player2_id: "p8", invite_token: "token4", seed_number: 4, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t5", name: "Board Certified", player1_id: "p9", player2_id: "p10", invite_token: "token5", seed_number: 5, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t6", name: "The Corntenders", player1_id: "p11", player2_id: "p12", invite_token: "token6", seed_number: 6, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t7", name: "Sack Attack", player1_id: "p13", player2_id: "p14", invite_token: "token7", seed_number: 7, created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "t8", name: "Kernel Sanders", player1_id: "p15", player2_id: "p16", invite_token: "token8", seed_number: 8, created_at: "2024-01-01", updated_at: "2024-01-01" },
+// Generate mock teams for up to 32 teams
+const teamNames = [
+  "Corn Stars", "Hole in One", "Bag Daddies", "Toss Bosses",
+  "Board Certified", "The Corntenders", "Sack Attack", "Kernel Sanders",
+  "Maize Madness", "Husker Heroes", "Bag Raiders", "Corn Dawgs",
+  "Toss Masters", "Hole Lotta Fun", "Bean Bag Bandits", "Cornucopia",
+  "The Bag End", "Corn Fed", "Toss It Up", "Board Warriors",
+  "Sack Masters", "Corn Crushers", "Hole Patrol", "Bag Ballers",
+  "Toss Dynasty", "Corn Nation", "Board Dominators", "Sack City",
+  "Hole Hunters", "Bag Brigade", "Corn Kings", "Toss Titans"
 ];
+
+export const mockTeams: Team[] = teamNames.map((name, index) => ({
+  id: `t${index + 1}`,
+  name,
+  player1_id: `p${index * 2 + 1}`,
+  player2_id: `p${index * 2 + 2}`,
+  invite_token: `token${index + 1}`,
+  seed_number: index + 1,
+  created_at: "2024-01-01",
+  updated_at: "2024-01-01",
+}));
 
 // Helper to get teams with player data
 export function getMockTeamsWithPlayers(count?: number): TeamWithPlayers[] {
@@ -65,10 +80,18 @@ const TOURNAMENT_ID = "test-tournament-1";
 
 type BracketType = "winners" | "consolation";
 
+interface TeamInMatch {
+  id: string;
+  name: string;
+  player1_name?: string | null;
+  player2_name?: string | null;
+}
+
 interface MatchWithTeams extends Match {
-  team_a: { id: string; name: string } | null;
-  team_b: { id: string; name: string } | null;
-  winner: { id: string; name: string } | null;
+  team_a: TeamInMatch | null;
+  team_b: TeamInMatch | null;
+  winner: TeamInMatch | null;
+  is_bye?: boolean;
 }
 
 let matchCounter = 0;
@@ -98,8 +121,24 @@ function createMatch(
     next_winner_match_id: null,
     next_loser_match_id: null,
     is_finals: isFinals,
+    status: "pending",
+    started_at: null,
+    completed_at: null,
+    started_by: null,
     created_at: "2024-01-01",
     updated_at: "2024-01-01",
+  };
+}
+
+function getTeamWithPlayers(team: Team | undefined): TeamInMatch | null {
+  if (!team) return null;
+  const player1 = mockProfiles.find(p => p.id === team.player1_id);
+  const player2 = mockProfiles.find(p => p.id === team.player2_id);
+  return {
+    id: team.id,
+    name: team.name,
+    player1_name: player1?.display_name || null,
+    player2_name: player2?.display_name || null,
   };
 }
 
@@ -110,10 +149,104 @@ function addTeamData(match: Match): MatchWithTeams {
 
   return {
     ...match,
-    team_a: teamA ? { id: teamA.id, name: teamA.name } : null,
-    team_b: teamB ? { id: teamB.id, name: teamB.name } : null,
-    winner: winner ? { id: winner.id, name: winner.name } : null,
+    team_a: getTeamWithPlayers(teamA),
+    team_b: getTeamWithPlayers(teamB),
+    winner: getTeamWithPlayers(winner),
+    is_bye: false,
   };
+}
+
+/**
+ * Process bye rounds - when a team has no opponent, they auto-advance
+ * Only first-round matches can be byes (where a team slot has no feeder match)
+ */
+function processByeRounds(matches: MatchWithTeams[]): MatchWithTeams[] {
+  let updated = [...matches];
+
+  // Build a map of which matches feed into which slots
+  const feederMatches = new Map<string, { slotA: string | null; slotB: string | null }>();
+
+  updated.forEach(match => {
+    if (match.next_winner_match_id) {
+      const existing = feederMatches.get(match.next_winner_match_id) || { slotA: null, slotB: null };
+      const isSlotA = match.position_in_round % 2 === 1;
+      if (isSlotA) {
+        existing.slotA = match.id;
+      } else {
+        existing.slotB = match.id;
+      }
+      feederMatches.set(match.next_winner_match_id, existing);
+    }
+  });
+
+  // Only process first-round byes (matches where empty slot has no feeder)
+  updated = updated.map(match => {
+    // Skip if already complete
+    if (match.status === "complete" || match.is_bye) return match;
+
+    // Check for bye: exactly one team assigned
+    const hasTeamA = match.team_a_id !== null;
+    const hasTeamB = match.team_b_id !== null;
+
+    if (hasTeamA !== hasTeamB) {
+      // Check if the empty slot has a feeder match
+      const feeders = feederMatches.get(match.id);
+      // Use != null to catch both null and undefined
+      const emptySlotHasFeeder = hasTeamA
+        ? (feeders?.slotB != null)
+        : (feeders?.slotA != null);
+
+      // Only a true bye if there's no feeder match for the empty slot
+      if (!emptySlotHasFeeder) {
+        const byeTeamId = hasTeamA ? match.team_a_id : match.team_b_id;
+        const byeTeam = mockTeams.find(t => t.id === byeTeamId);
+
+        return {
+          ...match,
+          is_bye: true,
+          status: "complete" as const,
+          winner_id: byeTeamId,
+          winner: getTeamWithPlayers(byeTeam),
+          completed_at: new Date().toISOString(),
+        };
+      }
+    }
+
+    return match;
+  });
+
+  // Advance bye winners to next matches (only one pass needed now)
+  updated.forEach((match, index) => {
+    if (!match.is_bye || !match.winner_id) return;
+
+    const nextMatchId = match.next_winner_match_id;
+    if (!nextMatchId) return;
+
+    const nextMatchIndex = updated.findIndex(m => m.id === nextMatchId);
+    if (nextMatchIndex === -1) return;
+
+    const nextMatch = updated[nextMatchIndex];
+    const winner = mockTeams.find(t => t.id === match.winner_id);
+
+    // Determine slot based on position_in_round
+    const isSlotA = match.position_in_round % 2 === 1;
+
+    if (isSlotA && !nextMatch.team_a_id) {
+      updated[nextMatchIndex] = {
+        ...nextMatch,
+        team_a_id: match.winner_id,
+        team_a: getTeamWithPlayers(winner),
+      };
+    } else if (!isSlotA && !nextMatch.team_b_id) {
+      updated[nextMatchIndex] = {
+        ...nextMatch,
+        team_b_id: match.winner_id,
+        team_b: getTeamWithPlayers(winner),
+      };
+    }
+  });
+
+  return updated;
 }
 
 /**
@@ -185,11 +318,36 @@ export function generateSeededBracket(teamCount: number = 8): MatchWithTeams[] {
   // Consolation Round 3 (Consolation Finals - 3rd vs 4th)
   matches.push(createMatch("consolation", 3, 1, null, null, true)); // m12 - Consolation Finals
 
+  // Set up advancement paths (next_winner_match_id, next_loser_match_id)
+  // Winners R1 → Winners R2 (Semis) + Consolation R1
+  matches[0].next_winner_match_id = "m5"; // M1 winner → M5 team_a
+  matches[0].next_loser_match_id = "m8";  // M1 loser → M8 team_a
+  matches[1].next_winner_match_id = "m5"; // M2 winner → M5 team_b
+  matches[1].next_loser_match_id = "m8";  // M2 loser → M8 team_b
+  matches[2].next_winner_match_id = "m6"; // M3 winner → M6 team_a
+  matches[2].next_loser_match_id = "m9";  // M3 loser → M9 team_a
+  matches[3].next_winner_match_id = "m6"; // M4 winner → M6 team_b
+  matches[3].next_loser_match_id = "m9";  // M4 loser → M9 team_b
+
+  // Winners R2 (Semis) → Winners Finals + Consolation R2
+  matches[4].next_winner_match_id = "m7";  // M5 winner → M7 team_a
+  matches[4].next_loser_match_id = "m10";  // M5 loser → M10 team_b
+  matches[5].next_winner_match_id = "m7";  // M6 winner → M7 team_b
+  matches[5].next_loser_match_id = "m11";  // M6 loser → M11 team_b
+
+  // Consolation R1 → Consolation R2
+  matches[7].next_winner_match_id = "m10"; // M8 winner → M10 team_a
+  matches[8].next_winner_match_id = "m11"; // M9 winner → M11 team_a
+
+  // Consolation R2 → Consolation Finals
+  matches[9].next_winner_match_id = "m12";  // M10 winner → M12 team_a
+  matches[10].next_winner_match_id = "m12"; // M11 winner → M12 team_b
+
   return matches.map(addTeamData);
 }
 
 /**
- * Simulate a match result
+ * Simulate a match result and auto-advance teams
  */
 export function simulateMatchResult(
   matches: MatchWithTeams[],
@@ -198,17 +356,85 @@ export function simulateMatchResult(
   scoreA: number,
   scoreB: number
 ): MatchWithTeams[] {
+  const currentMatch = matches.find(m => m.id === matchId);
+  if (!currentMatch) return matches;
+
+  const loserId = currentMatch.team_a_id === winnerId ? currentMatch.team_b_id : currentMatch.team_a_id;
+  const winner = mockTeams.find(t => t.id === winnerId);
+  const loser = mockTeams.find(t => t.id === loserId);
+
   return matches.map(match => {
+    // Update the current match with result
     if (match.id === matchId) {
-      const loserId = match.team_a_id === winnerId ? match.team_b_id : match.team_a_id;
-      const winner = mockTeams.find(t => t.id === winnerId);
       return {
         ...match,
         winner_id: winnerId,
         loser_id: loserId,
         score_a: scoreA,
         score_b: scoreB,
-        winner: winner ? { id: winner.id, name: winner.name } : null,
+        status: "complete" as const,
+        completed_at: new Date().toISOString(),
+        winner: getTeamWithPlayers(winner),
+      };
+    }
+
+    // Advance winner to next match
+    if (currentMatch.next_winner_match_id === match.id && winnerId) {
+      // Determine slot based on position_in_round of the source match
+      const isSlotA = currentMatch.position_in_round % 2 === 1;
+      if (isSlotA) {
+        return {
+          ...match,
+          team_a_id: winnerId,
+          team_a: getTeamWithPlayers(winner),
+        };
+      } else {
+        return {
+          ...match,
+          team_b_id: winnerId,
+          team_b: getTeamWithPlayers(winner),
+        };
+      }
+    }
+
+    // Drop loser to consolation
+    if (currentMatch.next_loser_match_id === match.id && loserId) {
+      // Determine slot based on position_in_round of the source match
+      const isSlotA = currentMatch.position_in_round % 2 === 1;
+      if (isSlotA) {
+        return {
+          ...match,
+          team_a_id: loserId,
+          team_a: getTeamWithPlayers(loser),
+        };
+      } else {
+        return {
+          ...match,
+          team_b_id: loserId,
+          team_b: getTeamWithPlayers(loser),
+        };
+      }
+    }
+
+    return match;
+  });
+}
+
+/**
+ * Start a match (set to in_progress)
+ */
+export function startMatch(
+  matches: MatchWithTeams[],
+  matchId: string,
+  startedBy: string
+): MatchWithTeams[] {
+  return matches.map(match => {
+    if (match.id === matchId && match.status === "pending") {
+      return {
+        ...match,
+        status: "in_progress" as const,
+        started_at: new Date().toISOString(),
+        started_by: startedBy,
       };
     }
     return match;
@@ -234,13 +460,13 @@ export function advanceWinner(
         return {
           ...match,
           team_a_id: fromMatch.winner_id,
-          team_a: team ? { id: team.id, name: team.name } : null,
+          team_a: getTeamWithPlayers(team),
         };
       } else {
         return {
           ...match,
           team_b_id: fromMatch.winner_id,
-          team_b: team ? { id: team.id, name: team.name } : null,
+          team_b: getTeamWithPlayers(team),
         };
       }
     }
@@ -267,13 +493,13 @@ export function dropToConsolation(
         return {
           ...match,
           team_a_id: fromMatch.loser_id,
-          team_a: team ? { id: team.id, name: team.name } : null,
+          team_a: getTeamWithPlayers(team),
         };
       } else {
         return {
           ...match,
           team_b_id: fromMatch.loser_id,
-          team_b: team ? { id: team.id, name: team.name } : null,
+          team_b: getTeamWithPlayers(team),
         };
       }
     }
@@ -418,7 +644,372 @@ export function get4TeamFreshBracket(): MatchWithTeams[] {
   // Consolation Finals (3rd vs 4th) - losers of semifinals
   matches.push(createMatch("consolation", 1, 1, null, null, true)); // m4
 
+  // Set up advancement paths for 4-team bracket
+  matches[0].next_winner_match_id = "m3"; // M1 winner → Finals team_a
+  matches[0].next_loser_match_id = "m4";  // M1 loser → Consolation team_a
+  matches[1].next_winner_match_id = "m3"; // M2 winner → Finals team_b
+  matches[1].next_loser_match_id = "m4";  // M2 loser → Consolation team_b
+
   return matches.map(addTeamData);
+}
+
+/**
+ * Generate a dynamic bracket based on number of teams
+ * - 4 teams: 4-team bracket
+ * - 5-8 teams: 8-team bracket structure (with empty slots)
+ * - 9-16 teams: 16-team bracket structure
+ * - 17-32 teams: 32-team bracket structure
+ *
+ * @param registeredTeamCount Number of teams registered (can be less than bracket size)
+ */
+export function generateDynamicBracket(registeredTeamCount: number): MatchWithTeams[] {
+  // Determine bracket size (minimum 4, round up to next power of 2 for larger)
+  let bracketSize: number;
+  if (registeredTeamCount <= 4) {
+    bracketSize = 4;
+  } else if (registeredTeamCount <= 8) {
+    bracketSize = 8;
+  } else if (registeredTeamCount <= 16) {
+    bracketSize = 16;
+  } else {
+    bracketSize = 32;
+  }
+
+  // Get only the registered teams
+  const teams = getMockTeamsWithPlayers(registeredTeamCount);
+
+  if (bracketSize === 4) {
+    return generate4TeamBracket(teams);
+  } else if (bracketSize === 8) {
+    return generate8TeamBracket(teams);
+  } else if (bracketSize === 16) {
+    return generate16TeamBracket(teams);
+  } else {
+    return generate32TeamBracket(teams);
+  }
+}
+
+function generate4TeamBracket(teams: TeamWithPlayers[]): MatchWithTeams[] {
+  matchCounter = 0;
+  const matches: Match[] = [];
+
+  // Get teams by seed (may be null if not enough teams)
+  const getTeamBySeed = (seed: number) => teams.find(t => t.seed_number === seed);
+
+  // Winners Round 1 (Semifinals): 1v4, 2v3
+  const teamA1 = getTeamBySeed(1);
+  const teamB1 = getTeamBySeed(4);
+  const teamA2 = getTeamBySeed(2);
+  const teamB2 = getTeamBySeed(3);
+
+  matches.push(createMatch("winners", 1, 1, teamA1?.id || null, teamB1?.id || null)); // m1
+  matches.push(createMatch("winners", 1, 2, teamA2?.id || null, teamB2?.id || null)); // m2
+
+  // Winners Finals (1st vs 2nd)
+  matches.push(createMatch("winners", 2, 1, null, null, true)); // m3
+
+  // Consolation Finals (3rd vs 4th)
+  matches.push(createMatch("consolation", 1, 1, null, null, true)); // m4
+
+  // Set up advancement paths
+  matches[0].next_winner_match_id = "m3";
+  matches[0].next_loser_match_id = "m4";
+  matches[1].next_winner_match_id = "m3";
+  matches[1].next_loser_match_id = "m4";
+
+  // Process bye rounds
+  return processByeRounds(matches.map(addTeamData));
+}
+
+function generate8TeamBracket(teams: TeamWithPlayers[]): MatchWithTeams[] {
+  matchCounter = 0;
+  const matches: Match[] = [];
+
+  // Get teams by seed (may be null if not enough teams)
+  const getTeamBySeed = (seed: number) => teams.find(t => t.seed_number === seed);
+
+  // Standard seeding: 1v8, 4v5, 2v7, 3v6
+  const seedMatchups = [
+    [1, 8],
+    [4, 5],
+    [2, 7],
+    [3, 6],
+  ];
+
+  // Winners Round 1 (Quarterfinals)
+  seedMatchups.forEach(([seedA, seedB], index) => {
+    const teamA = getTeamBySeed(seedA);
+    const teamB = getTeamBySeed(seedB);
+    matches.push(createMatch(
+      "winners",
+      1,
+      index + 1,
+      teamA?.id || null,
+      teamB?.id || null,
+    ));
+  });
+
+  // Winners Round 2 (Semifinals)
+  matches.push(createMatch("winners", 2, 1)); // m5
+  matches.push(createMatch("winners", 2, 2)); // m6
+
+  // Winners Finals
+  matches.push(createMatch("winners", 3, 1, null, null, true)); // m7
+
+  // Consolation Round 1
+  matches.push(createMatch("consolation", 1, 1)); // m8
+  matches.push(createMatch("consolation", 1, 2)); // m9
+
+  // Consolation Round 2
+  matches.push(createMatch("consolation", 2, 1)); // m10
+  matches.push(createMatch("consolation", 2, 2)); // m11
+
+  // Consolation Finals
+  matches.push(createMatch("consolation", 3, 1, null, null, true)); // m12
+
+  // Set up advancement paths (same as before)
+  matches[0].next_winner_match_id = "m5";
+  matches[0].next_loser_match_id = "m8";
+  matches[1].next_winner_match_id = "m5";
+  matches[1].next_loser_match_id = "m8";
+  matches[2].next_winner_match_id = "m6";
+  matches[2].next_loser_match_id = "m9";
+  matches[3].next_winner_match_id = "m6";
+  matches[3].next_loser_match_id = "m9";
+
+  matches[4].next_winner_match_id = "m7";
+  matches[4].next_loser_match_id = "m10";
+  matches[5].next_winner_match_id = "m7";
+  matches[5].next_loser_match_id = "m11";
+
+  matches[7].next_winner_match_id = "m10";
+  matches[8].next_winner_match_id = "m11";
+
+  matches[9].next_winner_match_id = "m12";
+  matches[10].next_winner_match_id = "m12";
+
+  // Process bye rounds
+  return processByeRounds(matches.map(addTeamData));
+}
+
+/**
+ * Generate standard seeding matchups for any bracket size
+ * Uses the standard tournament seeding where 1 plays lowest, 2 plays second lowest, etc.
+ */
+function generateSeedMatchups(bracketSize: number): number[][] {
+  if (bracketSize === 4) {
+    return [[1, 4], [2, 3]];
+  } else if (bracketSize === 8) {
+    return [[1, 8], [4, 5], [2, 7], [3, 6]];
+  } else if (bracketSize === 16) {
+    return [
+      [1, 16], [8, 9], [4, 13], [5, 12],
+      [2, 15], [7, 10], [3, 14], [6, 11]
+    ];
+  } else if (bracketSize === 32) {
+    return [
+      [1, 32], [16, 17], [8, 25], [9, 24],
+      [4, 29], [13, 20], [5, 28], [12, 21],
+      [2, 31], [15, 18], [7, 26], [10, 23],
+      [3, 30], [14, 19], [6, 27], [11, 22]
+    ];
+  }
+  return [];
+}
+
+function generate16TeamBracket(teams: TeamWithPlayers[]): MatchWithTeams[] {
+  matchCounter = 0;
+  const matches: Match[] = [];
+  const getTeamBySeed = (seed: number) => teams.find(t => t.seed_number === seed);
+
+  const seedMatchups = generateSeedMatchups(16);
+
+  // Winners Round 1 (Round of 16) - 8 matches
+  seedMatchups.forEach(([seedA, seedB], index) => {
+    const teamA = getTeamBySeed(seedA);
+    const teamB = getTeamBySeed(seedB);
+    matches.push(createMatch("winners", 1, index + 1, teamA?.id || null, teamB?.id || null));
+  });
+
+  // Winners Round 2 (Quarters) - 4 matches: m9-m12
+  for (let i = 0; i < 4; i++) {
+    matches.push(createMatch("winners", 2, i + 1));
+  }
+
+  // Winners Round 3 (Semis) - 2 matches: m13-m14
+  matches.push(createMatch("winners", 3, 1));
+  matches.push(createMatch("winners", 3, 2));
+
+  // Winners Finals: m15
+  matches.push(createMatch("winners", 4, 1, null, null, true));
+
+  // Consolation Round 1 - 4 matches: m16-m19 (R1 losers)
+  for (let i = 0; i < 4; i++) {
+    matches.push(createMatch("consolation", 1, i + 1));
+  }
+
+  // Consolation Round 2 - 4 matches: m20-m23 (Consol R1 winners + Quarters losers)
+  for (let i = 0; i < 4; i++) {
+    matches.push(createMatch("consolation", 2, i + 1));
+  }
+
+  // Consolation Round 3 - 2 matches: m24-m25
+  matches.push(createMatch("consolation", 3, 1));
+  matches.push(createMatch("consolation", 3, 2));
+
+  // Consolation Finals: m26
+  matches.push(createMatch("consolation", 4, 1, null, null, true));
+
+  // Set up advancement paths - Winners R1 to R2
+  for (let i = 0; i < 8; i++) {
+    const targetMatch = Math.floor(i / 2) + 9; // m9-m12
+    const consolMatch = Math.floor(i / 2) + 16; // m16-m19
+    matches[i].next_winner_match_id = `m${targetMatch}`;
+    matches[i].next_loser_match_id = `m${consolMatch}`;
+  }
+
+  // Winners R2 to R3
+  matches[8].next_winner_match_id = "m13";
+  matches[8].next_loser_match_id = "m20";
+  matches[9].next_winner_match_id = "m13";
+  matches[9].next_loser_match_id = "m21";
+  matches[10].next_winner_match_id = "m14";
+  matches[10].next_loser_match_id = "m22";
+  matches[11].next_winner_match_id = "m14";
+  matches[11].next_loser_match_id = "m23";
+
+  // Winners R3 to Finals
+  matches[12].next_winner_match_id = "m15";
+  matches[12].next_loser_match_id = "m24";
+  matches[13].next_winner_match_id = "m15";
+  matches[13].next_loser_match_id = "m25";
+
+  // Consolation R1 to R2
+  matches[15].next_winner_match_id = "m20";
+  matches[16].next_winner_match_id = "m21";
+  matches[17].next_winner_match_id = "m22";
+  matches[18].next_winner_match_id = "m23";
+
+  // Consolation R2 to R3
+  matches[19].next_winner_match_id = "m24";
+  matches[20].next_winner_match_id = "m24";
+  matches[21].next_winner_match_id = "m25";
+  matches[22].next_winner_match_id = "m25";
+
+  // Consolation R3 to Finals
+  matches[23].next_winner_match_id = "m26";
+  matches[24].next_winner_match_id = "m26";
+
+  return processByeRounds(matches.map(addTeamData));
+}
+
+function generate32TeamBracket(teams: TeamWithPlayers[]): MatchWithTeams[] {
+  matchCounter = 0;
+  const matches: Match[] = [];
+  const getTeamBySeed = (seed: number) => teams.find(t => t.seed_number === seed);
+
+  const seedMatchups = generateSeedMatchups(32);
+
+  // Winners Round 1 (Round of 32) - 16 matches: m1-m16
+  seedMatchups.forEach(([seedA, seedB], index) => {
+    const teamA = getTeamBySeed(seedA);
+    const teamB = getTeamBySeed(seedB);
+    matches.push(createMatch("winners", 1, index + 1, teamA?.id || null, teamB?.id || null));
+  });
+
+  // Winners Round 2 (Round of 16) - 8 matches: m17-m24
+  for (let i = 0; i < 8; i++) {
+    matches.push(createMatch("winners", 2, i + 1));
+  }
+
+  // Winners Round 3 (Quarters) - 4 matches: m25-m28
+  for (let i = 0; i < 4; i++) {
+    matches.push(createMatch("winners", 3, i + 1));
+  }
+
+  // Winners Round 4 (Semis) - 2 matches: m29-m30
+  matches.push(createMatch("winners", 4, 1));
+  matches.push(createMatch("winners", 4, 2));
+
+  // Winners Finals: m31
+  matches.push(createMatch("winners", 5, 1, null, null, true));
+
+  // Consolation Round 1 - 8 matches: m32-m39 (R1 losers)
+  for (let i = 0; i < 8; i++) {
+    matches.push(createMatch("consolation", 1, i + 1));
+  }
+
+  // Consolation Round 2 - 8 matches: m40-m47 (Consol R1 winners + R2 losers)
+  for (let i = 0; i < 8; i++) {
+    matches.push(createMatch("consolation", 2, i + 1));
+  }
+
+  // Consolation Round 3 - 4 matches: m48-m51
+  for (let i = 0; i < 4; i++) {
+    matches.push(createMatch("consolation", 3, i + 1));
+  }
+
+  // Consolation Round 4 - 2 matches: m52-m53
+  matches.push(createMatch("consolation", 4, 1));
+  matches.push(createMatch("consolation", 4, 2));
+
+  // Consolation Finals: m54
+  matches.push(createMatch("consolation", 5, 1, null, null, true));
+
+  // Set up advancement paths - Winners R1 to R2
+  for (let i = 0; i < 16; i++) {
+    const targetMatch = Math.floor(i / 2) + 17; // m17-m24
+    const consolMatch = Math.floor(i / 2) + 32; // m32-m39
+    matches[i].next_winner_match_id = `m${targetMatch}`;
+    matches[i].next_loser_match_id = `m${consolMatch}`;
+  }
+
+  // Winners R2 to R3
+  for (let i = 0; i < 8; i++) {
+    const targetMatch = Math.floor(i / 2) + 25; // m25-m28
+    const consolMatch = i + 40; // m40-m47
+    matches[16 + i].next_winner_match_id = `m${targetMatch}`;
+    matches[16 + i].next_loser_match_id = `m${consolMatch}`;
+  }
+
+  // Winners R3 to R4
+  matches[24].next_winner_match_id = "m29";
+  matches[24].next_loser_match_id = "m48";
+  matches[25].next_winner_match_id = "m29";
+  matches[25].next_loser_match_id = "m49";
+  matches[26].next_winner_match_id = "m30";
+  matches[26].next_loser_match_id = "m50";
+  matches[27].next_winner_match_id = "m30";
+  matches[27].next_loser_match_id = "m51";
+
+  // Winners R4 to Finals
+  matches[28].next_winner_match_id = "m31";
+  matches[28].next_loser_match_id = "m52";
+  matches[29].next_winner_match_id = "m31";
+  matches[29].next_loser_match_id = "m53";
+
+  // Consolation R1 to R2
+  for (let i = 0; i < 8; i++) {
+    matches[31 + i].next_winner_match_id = `m${40 + i}`;
+  }
+
+  // Consolation R2 to R3
+  for (let i = 0; i < 8; i++) {
+    const targetMatch = Math.floor(i / 2) + 48;
+    matches[39 + i].next_winner_match_id = `m${targetMatch}`;
+  }
+
+  // Consolation R3 to R4
+  matches[47].next_winner_match_id = "m52";
+  matches[48].next_winner_match_id = "m52";
+  matches[49].next_winner_match_id = "m53";
+  matches[50].next_winner_match_id = "m53";
+
+  // Consolation R4 to Finals
+  matches[51].next_winner_match_id = "m54";
+  matches[52].next_winner_match_id = "m54";
+
+  return processByeRounds(matches.map(addTeamData));
 }
 
 /**

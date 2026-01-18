@@ -121,7 +121,7 @@ export function TeamManagementSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
+      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader className="pb-4">
           <SheetTitle>Team Settings</SheetTitle>
           <SheetDescription>

@@ -1,20 +1,43 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
-import { Trophy, Clock, Medal } from "lucide-react";
-import type { Match } from "@/lib/types/database";
+import { Trophy, Clock, Medal, Play, CheckCircle } from "lucide-react";
+import type { Match, MatchStatus } from "@/lib/types/database";
+import { MatchSheet } from "./match-sheet";
+
+type TeamInMatch = {
+  id: string;
+  name: string;
+  player1_name?: string | null;
+  player2_name?: string | null;
+};
 
 type MatchWithTeams = Match & {
-  team_a: { id: string; name: string } | null;
-  team_b: { id: string; name: string } | null;
-  winner: { id: string; name: string } | null;
+  team_a: TeamInMatch | null;
+  team_b: TeamInMatch | null;
+  winner: TeamInMatch | null;
+  is_bye?: boolean;
 };
 
 interface BracketContentProps {
   matches: MatchWithTeams[];
+  onStartMatch?: (matchId: string) => void | Promise<void>;
+  onCompleteMatch?: (matchId: string, scoreA: number, scoreB: number) => void | Promise<void>;
+  canUserInteract?: boolean;
+  userTeamId?: string | null;
 }
 
-export function BracketContent({ matches }: BracketContentProps) {
+export function BracketContent({
+  matches,
+  onStartMatch,
+  onCompleteMatch,
+  canUserInteract = true,
+  userTeamId,
+}: BracketContentProps) {
+  const [selectedMatch, setSelectedMatch] = useState<MatchWithTeams | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   // Group matches by bracket type
   const winnersMatches = matches.filter(m => m.bracket_type === "winners");
   const consolationMatches = matches.filter(m => m.bracket_type === "consolation");
@@ -35,6 +58,29 @@ export function BracketContent({ matches }: BracketContentProps) {
     acc[match.round_number].push(match);
     return acc;
   }, {} as Record<number, MatchWithTeams[]>);
+
+  const handleMatchClick = (match: MatchWithTeams) => {
+    setSelectedMatch(match);
+    setSheetOpen(true);
+  };
+
+  const handleStartMatch = async (matchId: string) => {
+    if (onStartMatch) {
+      await onStartMatch(matchId);
+      // Update the selected match state after starting
+      const updatedMatch = matches.find(m => m.id === matchId);
+      if (updatedMatch) {
+        setSelectedMatch({ ...updatedMatch, status: "in_progress" });
+      }
+    }
+  };
+
+  const handleCompleteMatch = async (matchId: string, scoreA: number, scoreB: number) => {
+    if (onCompleteMatch) {
+      await onCompleteMatch(matchId, scoreA, scoreB);
+      setSheetOpen(false);
+    }
+  };
 
   return (
     <motion.div
@@ -97,6 +143,7 @@ export function BracketContent({ matches }: BracketContentProps) {
                   index={index}
                   showPlacement={isFinals}
                   placement={{ winner: "1st", loser: "2nd" }}
+                  onClick={() => handleMatchClick(match)}
                 />
               ))}
             </div>
@@ -143,6 +190,7 @@ export function BracketContent({ matches }: BracketContentProps) {
                   index={index}
                   showPlacement={isFinals}
                   placement={{ winner: "3rd", loser: "4th" }}
+                  onClick={() => handleMatchClick(match)}
                 />
               ))}
             </div>
@@ -153,6 +201,24 @@ export function BracketContent({ matches }: BracketContentProps) {
           <p className="text-white/40 text-sm">No matches yet</p>
         )}
       </motion.section>
+
+      {/* Match Sheet */}
+      <MatchSheet
+        match={selectedMatch}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onStartMatch={handleStartMatch}
+        onCompleteMatch={handleCompleteMatch}
+        canUserInteract={canUserInteract}
+        userTeamId={userTeamId}
+        placement={
+          selectedMatch?.is_finals
+            ? selectedMatch.bracket_type === "winners"
+              ? { winner: "1st", loser: "2nd" }
+              : { winner: "3rd", loser: "4th" }
+            : undefined
+        }
+      />
     </motion.div>
   );
 }
@@ -202,6 +268,7 @@ interface MatchCardProps {
   index: number;
   showPlacement?: boolean;
   placement?: { winner: string; loser: string };
+  onClick?: () => void;
 }
 
 function MatchCard({
@@ -211,33 +278,72 @@ function MatchCard({
   index,
   showPlacement,
   placement,
+  onClick,
 }: MatchCardProps) {
   const borderColor = highlightColor === "yellow" ? "border-yellow-400/30" : "border-orange-400/30";
+  const canInteract = match.team_a_id && match.team_b_id && !match.is_bye;
+  const isBye = match.is_bye;
+
+  // For bye rounds, determine which team has the bye and which slot is empty
+  const teamADisplay = match.team_a?.name || (isBye && match.team_b_id ? "Bye" : "TBD");
+  const teamBDisplay = match.team_b?.name || (isBye && match.team_a_id ? "Bye" : "TBD");
+  const isTeamABye = !match.team_a_id && isBye;
+  const isTeamBBye = !match.team_b_id && isBye;
 
   return (
     <motion.div
-      className={`rounded-xl overflow-hidden ${highlight ? `border ${borderColor}` : ""}`}
+      className={`rounded-xl overflow-hidden ${highlight ? `border ${borderColor}` : ""} ${canInteract ? "cursor-pointer active:scale-[0.98]" : ""} ${isBye ? "opacity-60" : ""}`}
       initial={{ opacity: 0, x: -15 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      whileHover={{ scale: 1.01 }}
+      whileHover={canInteract ? { scale: 1.01 } : undefined}
+      whileTap={canInteract ? { scale: 0.99 } : undefined}
+      onClick={canInteract ? onClick : undefined}
     >
-      <div className="text-xs text-white/40 px-4 py-1 bg-white/5 flex justify-between">
+      <div className="text-xs text-white/40 px-4 py-1 bg-white/5 flex justify-between items-center">
         <span>Match {match.match_number}</span>
-        {match.is_finals && (
-          <span className={highlightColor === "yellow" ? "text-yellow-400" : "text-orange-400"}>
-            Finals
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Status Badge */}
+          {isBye && (
+            <span className="flex items-center gap-1 text-blue-400">
+              Bye
+            </span>
+          )}
+          {!isBye && match.status === "in_progress" && (
+            <span className="flex items-center gap-1 text-yellow-400">
+              <Play className="h-3 w-3" />
+              Live
+            </span>
+          )}
+          {!isBye && match.status === "complete" && (
+            <span className="flex items-center gap-1 text-green-400">
+              <CheckCircle className="h-3 w-3" />
+            </span>
+          )}
+          {match.is_finals && (
+            <span className={highlightColor === "yellow" ? "text-yellow-400" : "text-orange-400"}>
+              Finals
+            </span>
+          )}
+        </div>
       </div>
       <div className="bg-white/5">
         <div
           className={`flex justify-between items-center px-4 py-3 transition-colors ${
-            match.winner_id === match.team_a_id ? "bg-green-500/10" : ""
+            match.winner_id === match.team_a_id && !isTeamABye ? "bg-green-500/10" : ""
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="font-medium text-white">{match.team_a?.name || "TBD"}</span>
+            <div>
+              <span className={`font-medium ${isTeamABye ? "text-white/30 italic" : "text-white"}`}>
+                {teamADisplay}
+              </span>
+              {match.team_a?.player1_name && match.team_a?.player2_name && (
+                <p className="text-xs text-white/40">
+                  {match.team_a.player1_name} & {match.team_a.player2_name}
+                </p>
+              )}
+            </div>
             {showPlacement && match.winner_id === match.team_a_id && placement && (
               <span className="text-xs text-green-400 bg-green-500/20 px-2 py-0.5 rounded">
                 {placement.winner}
@@ -249,16 +355,25 @@ function MatchCard({
               </span>
             )}
           </div>
-          <span className="font-bold text-white">{match.score_a ?? "-"}</span>
+          <span className="font-bold text-white">{isBye ? "-" : (match.score_a ?? "-")}</span>
         </div>
         <div className="h-px bg-white/10" />
         <div
           className={`flex justify-between items-center px-4 py-3 transition-colors ${
-            match.winner_id === match.team_b_id ? "bg-green-500/10" : ""
+            match.winner_id === match.team_b_id && !isTeamBBye ? "bg-green-500/10" : ""
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="font-medium text-white">{match.team_b?.name || "TBD"}</span>
+            <div>
+              <span className={`font-medium ${isTeamBBye ? "text-white/30 italic" : "text-white"}`}>
+                {teamBDisplay}
+              </span>
+              {match.team_b?.player1_name && match.team_b?.player2_name && (
+                <p className="text-xs text-white/40">
+                  {match.team_b.player1_name} & {match.team_b.player2_name}
+                </p>
+              )}
+            </div>
             {showPlacement && match.winner_id === match.team_b_id && placement && (
               <span className="text-xs text-green-400 bg-green-500/20 px-2 py-0.5 rounded">
                 {placement.winner}
@@ -270,7 +385,7 @@ function MatchCard({
               </span>
             )}
           </div>
-          <span className="font-bold text-white">{match.score_b ?? "-"}</span>
+          <span className="font-bold text-white">{isBye ? "-" : (match.score_b ?? "-")}</span>
         </div>
       </div>
     </motion.div>

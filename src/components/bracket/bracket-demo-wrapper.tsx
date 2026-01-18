@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { FlaskConical, RotateCcw, Users, Plus, Minus, ChevronDown, Zap, Trash2 } from "lucide-react";
 import { useDemoMode } from "@/lib/hooks/use-demo-mode";
@@ -97,6 +98,7 @@ export function BracketDemoWrapper({
   userRecord,
   opponentRecord,
 }: BracketDemoWrapperProps) {
+  const router = useRouter();
   const demoMode = useDemoMode();
   const bracket = useMockBracket("4-team-fresh");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("t1");
@@ -284,14 +286,17 @@ export function BracketDemoWrapper({
   // Server action handlers
   const handleStartMatch = async (matchId: string) => {
     await startMatch(matchId);
+    router.refresh();
   };
 
   const handleCompleteMatch = async (matchId: string, scoreA: number, scoreB: number) => {
     await completeMatch(matchId, scoreA, scoreB);
+    router.refresh();
   };
 
   const handleResetMatchScore = async (matchId: string) => {
     await resetMatchScore(matchId);
+    router.refresh();
   };
 
   // No teams registered yet

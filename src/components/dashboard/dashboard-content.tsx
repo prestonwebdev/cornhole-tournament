@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { InviteLinkShare } from "@/components/team/invite-link-share";
@@ -9,7 +10,7 @@ import { CreateTeamSheet } from "@/components/team/create-team-sheet";
 import { TeamManagementSheet } from "@/components/team/team-management-sheet";
 import { NextMatchCard } from "@/components/dashboard/next-match-card";
 import { TournamentStatus } from "@/components/dashboard/tournament-status";
-import { startMatch } from "@/lib/actions/match";
+import { startMatch, completeMatch } from "@/lib/actions/match";
 import { generateDynamicBracket } from "@/lib/test-data";
 import { Users, UserPlus, CheckCircle, Settings } from "lucide-react";
 import Link from "next/link";
@@ -94,6 +95,7 @@ export function DashboardContent({
   userRecord,
   opponentRecord,
 }: DashboardContentProps) {
+  const router = useRouter();
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
   const [teamManagementSheetOpen, setTeamManagementSheetOpen] = useState(false);
   const { toast } = useToast();
@@ -197,6 +199,20 @@ export function DashboardContent({
         title: "Match Started!",
         description: "Good luck!",
       });
+      router.refresh();
+    }
+  };
+
+  const handleCompleteMatch = async (matchId: string, scoreA: number, scoreB: number) => {
+    const result = await completeMatch(matchId, scoreA, scoreB);
+    if (result.error) {
+      toast({
+        title: "Error",
+        description: result.error,
+        variant: "destructive",
+      });
+    } else {
+      router.refresh();
     }
   };
 
@@ -267,6 +283,7 @@ export function DashboardContent({
             userRecord={userRecord}
             opponentRecord={opponentRecord}
             onStartMatch={nextMatch ? handleStartMatch : undefined}
+            onCompleteMatch={nextMatch ? handleCompleteMatch : undefined}
           />
         ) : (
           /* Show countdown until tournament starts */

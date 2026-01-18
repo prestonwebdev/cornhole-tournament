@@ -907,7 +907,19 @@ function generateMatchStructure(
   }
 
   // Process byes - auto-advance teams with no opponent in R1
-  return processMatchByes(matches);
+  console.log("[generateMatchStructure] Before bye processing:");
+  matches.forEach(m => {
+    console.log(`  Match ${m.match_number}: R${m.round_number} ${m.bracket_type} - team_a: ${m.team_a_id}, team_b: ${m.team_b_id}`);
+  });
+
+  const processedMatches = processMatchByes(matches);
+
+  console.log("[generateMatchStructure] After bye processing:");
+  processedMatches.forEach(m => {
+    console.log(`  Match ${m.match_number}: R${m.round_number} ${m.bracket_type} - team_a: ${m.team_a_id}, team_b: ${m.team_b_id}, status: ${m.status}, winner: ${m.winner_id}`);
+  });
+
+  return processedMatches;
 }
 
 /**
@@ -964,6 +976,8 @@ function processMatchByes(
     const hasTeamA = match.team_a_id !== null;
     const hasTeamB = match.team_b_id !== null;
 
+    console.log(`[processMatchByes] Match ${match.match_number}: hasTeamA=${hasTeamA}, hasTeamB=${hasTeamB}, position=${match.position_in_round}`);
+
     // Check for bye: exactly one team
     if (hasTeamA !== hasTeamB) {
       const feeders = feederMatches.get(match.id);
@@ -971,17 +985,22 @@ function processMatchByes(
         ? (feeders?.slotB != null)
         : (feeders?.slotA != null);
 
+      console.log(`[processMatchByes] Match ${match.match_number}: feeders=${JSON.stringify(feeders)}, emptySlotHasFeeder=${emptySlotHasFeeder}`);
+
       if (!emptySlotHasFeeder) {
         // This is a bye - auto-complete
         match.status = "complete";
         match.winner_id = hasTeamA ? match.team_a_id : match.team_b_id;
         match.completed_at = new Date().toISOString();
 
+        console.log(`[processMatchByes] Match ${match.match_number}: BYE! winner=${match.winner_id}`);
+
         // Advance winner to next match
         if (match.next_winner_match_id && match.winner_id) {
           const nextMatch = matches.find(m => m.id === match.next_winner_match_id);
           if (nextMatch) {
             const isSlotA = match.position_in_round % 2 === 1;
+            console.log(`[processMatchByes] Advancing to next match, isSlotA=${isSlotA}`);
             if (isSlotA) {
               nextMatch.team_a_id = match.winner_id;
             } else {

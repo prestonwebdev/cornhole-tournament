@@ -7,7 +7,6 @@ import { useDemoMode } from "@/lib/hooks/use-demo-mode";
 import { useMockBracket, generateDynamicBracket } from "@/lib/test-data";
 import { mockTeams, mockProfiles } from "@/lib/test-data";
 import { BracketView } from "./bracket-view";
-import { NextMatchCard } from "@/components/dashboard/next-match-card";
 import { startMatch, completeMatch, toggleBracketVisibility, resetBracket, resetMatchScore } from "@/lib/actions/match";
 import type { Match } from "@/lib/types/database";
 
@@ -416,18 +415,6 @@ export function BracketDemoWrapper({
             <p className="text-red-400 text-xs mt-2">{error}</p>
           )}
         </div>
-      )}
-
-      {/* Next Match Card - show when bracket is published and user has a match */}
-      {bracketPublished && nextMatch && userTeamId && (
-        <NextMatchCard
-          match={nextMatch}
-          userTeamId={userTeamId}
-          userRecord={userRecord}
-          opponentRecord={opponentRecord}
-          onStartMatch={handleStartMatch}
-          onCompleteMatch={handleCompleteMatch}
-        />
       )}
 
       {/* Bracket View */}

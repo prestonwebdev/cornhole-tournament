@@ -544,39 +544,12 @@ export async function ensureBracketGenerated() {
   // Check if matches already exist
   const { data: existingMatches, error: matchesCheckError } = await supabase
     .from("matches")
-    .select("id")
-    .eq("tournament_id", tournamentData.id)
-    .limit(1);
+    .select("id, status, team_a_id, team_b_id")
+    .eq("tournament_id", tournamentData.id);
 
-  console.log("[ensureBracketGenerated] Existing matches:", existingMatches, "Error:", matchesCheckError);
+  console.log("[ensureBracketGenerated] Existing matches:", existingMatches?.length, "Error:", matchesCheckError);
 
-  if (existingMatches && existingMatches.length > 0) {
-    // Matches already exist
-    return { success: true, alreadyExists: true };
-  }
-
-  // Get registered teams (must have both players)
-  const { data: teams, error: teamsError } = await supabase
-    .from("teams")
-    .select("id, name, seed_number, player1_id, player2_id")
-    .not("player1_id", "is", null)
-    .not("player2_id", "is", null)
-    .order("seed_number", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: true });
-
-  console.log("[ensureBracketGenerated] Teams:", teams?.length, "Error:", teamsError);
-
-  if (teamsError || !teams) {
-    return { error: "Failed to get teams" };
-  }
-
-  if (teams.length < 2) {
-    // Not enough teams yet
-    console.log("[ensureBracketGenerated] Not enough teams:", teams.length);
-    return { success: true, notEnoughTeams: true };
-  }
-
-  type RegisteredTeam = {
+  type RegisteredTeamData = {
     id: string;
     name: string;
     seed_number: number | null;
@@ -584,7 +557,77 @@ export async function ensureBracketGenerated() {
     player2_id: string | null;
   };
 
-  const registeredTeams = teams as RegisteredTeam[];
+  // Get registered teams (must have both players)
+  const { data: teamsData, error: teamsError } = await supabase
+    .from("teams")
+    .select("id, name, seed_number, player1_id, player2_id")
+    .not("player1_id", "is", null)
+    .not("player2_id", "is", null)
+    .order("seed_number", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
+
+  console.log("[ensureBracketGenerated] Teams:", teamsData?.length, "Error:", teamsError);
+
+  if (teamsError || !teamsData) {
+    return { error: "Failed to get teams" };
+  }
+
+  const teams = teamsData as RegisteredTeamData[];
+
+  if (teams.length < 2) {
+    // Not enough teams yet
+    console.log("[ensureBracketGenerated] Not enough teams:", teams.length);
+    return { success: true, notEnoughTeams: true };
+  }
+
+  if (existingMatches && existingMatches.length > 0) {
+    // Check if any matches have been started (in_progress or complete)
+    const hasStartedMatches = existingMatches.some(
+      m => (m as { status: string }).status === "in_progress" || (m as { status: string }).status === "complete"
+    );
+
+    // Count how many teams are currently in the bracket
+    const teamsInBracket = new Set<string>();
+    existingMatches.forEach(m => {
+      const match = m as { team_a_id: string | null; team_b_id: string | null };
+      if (match.team_a_id) teamsInBracket.add(match.team_a_id);
+      if (match.team_b_id) teamsInBracket.add(match.team_b_id);
+    });
+
+    const currentTeamIds = new Set(teams.map(t => t.id));
+    const teamCountChanged = teamsInBracket.size !== currentTeamIds.size;
+    const teamsChanged = ![...teamsInBracket].every(id => currentTeamIds.has(id)) ||
+                        ![...currentTeamIds].every(id => teamsInBracket.has(id));
+
+    console.log("[ensureBracketGenerated] Teams in bracket:", teamsInBracket.size, "Current teams:", currentTeamIds.size);
+    console.log("[ensureBracketGenerated] Team count changed:", teamCountChanged, "Teams changed:", teamsChanged);
+    console.log("[ensureBracketGenerated] Has started matches:", hasStartedMatches);
+
+    if ((teamCountChanged || teamsChanged) && !hasStartedMatches) {
+      // Team composition changed and no matches started - regenerate bracket
+      console.log("[ensureBracketGenerated] Regenerating bracket due to team changes");
+
+      // Delete existing matches
+      const { error: deleteError } = await supabase
+        .from("matches")
+        .delete()
+        .eq("tournament_id", tournamentData.id);
+
+      if (deleteError) {
+        console.error("[ensureBracketGenerated] Failed to delete matches:", deleteError);
+        return { error: `Failed to delete matches: ${deleteError.message}` };
+      }
+    } else if (!teamCountChanged && !teamsChanged) {
+      // No changes, bracket is up to date
+      return { success: true, alreadyExists: true };
+    } else {
+      // Teams changed but matches have started - can't regenerate
+      console.log("[ensureBracketGenerated] Cannot regenerate - matches have started");
+      return { success: true, alreadyExists: true, warning: "Teams changed but matches have started" };
+    }
+  }
+
+  const registeredTeams = teams;
 
   // Assign seed numbers if not already set
   registeredTeams.forEach((team, index) => {

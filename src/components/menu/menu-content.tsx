@@ -2,12 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { motion } from "motion/react";
-import { User, Users, BookOpen, ChevronRight, FlaskConical, Zap, Loader2 } from "lucide-react";
+import { User, Users, BookOpen, ChevronRight, FlaskConical, Zap, Loader2, Calendar, Clock } from "lucide-react";
 import { LeaveTeamButton } from "@/components/menu/leave-team-button";
 import { SignOutButton } from "@/components/menu/sign-out-button";
 import { RulesSheet } from "@/components/menu/rules-sheet";
 import { useDemoMode } from "@/lib/hooks/use-demo-mode";
 import { startTournament, stopTournament } from "@/lib/actions/match";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 interface Profile {
   id: string;
@@ -32,21 +39,40 @@ interface MenuContentProps {
   profile: Profile | null;
   team: Team | null;
   isTournamentLive?: boolean;
+  scheduledEventDate?: string | null;
 }
 
-export function MenuContent({ profile, team, isTournamentLive = false }: MenuContentProps) {
+export function MenuContent({ profile, team, isTournamentLive = false, scheduledEventDate }: MenuContentProps) {
   const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
+  const [scheduleSheetOpen, setScheduleSheetOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
   const demoMode = useDemoMode();
   const isAdmin = profile?.is_admin ?? false;
 
-  const handleToggleTournament = () => {
+  // Check if tournament is scheduled for the future
+  const isScheduled = scheduledEventDate && new Date(scheduledEventDate).getTime() > Date.now();
+
+  const handleStartNow = () => {
     startTransition(async () => {
-      if (isTournamentLive) {
-        await stopTournament();
-      } else {
-        await startTournament();
-      }
+      await startTournament();
+      setScheduleSheetOpen(false);
+    });
+  };
+
+  const handleSchedule = () => {
+    if (!scheduleDate || !scheduleTime) return;
+    startTransition(async () => {
+      const dateTime = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      await startTournament(dateTime);
+      setScheduleSheetOpen(false);
+    });
+  };
+
+  const handleStopTournament = () => {
+    startTransition(async () => {
+      await stopTournament();
     });
   };
 
@@ -175,37 +201,67 @@ export function MenuContent({ profile, team, isTournamentLive = false }: MenuCon
             </div>
           </div>
 
-          {/* Tournament Live Toggle */}
-          <button
-            onClick={handleToggleTournament}
-            disabled={isPending}
-            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 disabled:opacity-50"
-          >
-            <div className="flex items-center gap-3">
-              {isPending ? (
-                <Loader2 className="h-5 w-5 text-white/60 animate-spin" />
-              ) : (
-                <Zap className={`h-5 w-5 ${isTournamentLive ? "text-green-400" : "text-white/60"}`} />
-              )}
-              <div>
-                <span className="text-white">Tournament Live</span>
-                <p className="text-xs text-white/40">
-                  {isTournamentLive ? "Tournament is active for all players" : "Start the tournament for everyone"}
-                </p>
+          {/* Tournament Status */}
+          <div className="p-4 border-b border-white/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Zap className={`h-5 w-5 ${isTournamentLive ? "text-green-400" : isScheduled ? "text-yellow-400" : "text-white/60"}`} />
+                <div>
+                  <span className="text-white">Tournament Status</span>
+                  <p className="text-xs text-white/40">
+                    {isTournamentLive
+                      ? "Live now"
+                      : isScheduled
+                        ? `Scheduled: ${new Date(scheduledEventDate!).toLocaleString()}`
+                        : "Not scheduled"}
+                  </p>
+                </div>
               </div>
+              {isTournamentLive ? (
+                <span className="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">
+                  LIVE
+                </span>
+              ) : isScheduled ? (
+                <span className="px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">
+                  SCHEDULED
+                </span>
+              ) : null}
             </div>
-            <div
-              className={`w-12 h-7 rounded-full p-1 transition-colors ${
-                isTournamentLive ? "bg-green-500" : "bg-white/20"
-              }`}
-            >
-              <motion.div
-                className="w-5 h-5 rounded-full bg-white"
-                animate={{ x: isTournamentLive ? 20 : 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
+
+            {/* Action buttons */}
+            <div className="flex gap-2 mt-3">
+              {!isTournamentLive && !isScheduled && (
+                <button
+                  onClick={() => setScheduleSheetOpen(true)}
+                  disabled={isPending}
+                  className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                  Start Tournament
+                </button>
+              )}
+              {(isTournamentLive || isScheduled) && (
+                <button
+                  onClick={handleStopTournament}
+                  disabled={isPending}
+                  className="flex-1 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {isTournamentLive ? "Stop Tournament" : "Cancel Schedule"}
+                </button>
+              )}
+              {isScheduled && !isTournamentLive && (
+                <button
+                  onClick={() => setScheduleSheetOpen(true)}
+                  disabled={isPending}
+                  className="flex-1 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Reschedule
+                </button>
+              )}
             </div>
-          </button>
+          </div>
 
           {/* Demo Mode Toggle */}
           <button
@@ -258,6 +314,83 @@ export function MenuContent({ profile, team, isTournamentLive = false }: MenuCon
       </motion.div>
 
       <RulesSheet open={rulesSheetOpen} onOpenChange={setRulesSheetOpen} />
+
+      {/* Schedule Tournament Sheet */}
+      <Sheet open={scheduleSheetOpen} onOpenChange={setScheduleSheetOpen}>
+        <SheetContent side="bottom" className="bg-zinc-900 border-t border-white/10 rounded-t-3xl">
+          <SheetHeader className="text-left pb-4">
+            <SheetTitle className="text-white text-xl">Start Tournament</SheetTitle>
+            <SheetDescription className="text-white/60">
+              Start the tournament now or schedule it for later
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-4">
+            {/* Start Now Option */}
+            <button
+              onClick={handleStartNow}
+              disabled={isPending}
+              className="w-full p-4 bg-green-500 hover:bg-green-600 disabled:opacity-50 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              {isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Zap className="h-5 w-5" />
+              )}
+              Start Now
+            </button>
+
+            <div className="flex items-center gap-4 py-2">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-white/40 text-sm">or schedule for later</span>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {/* Schedule Option */}
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-white/60 text-xs mb-1 block">Date</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                    <input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      className="w-full bg-white/10 border border-white/10 rounded-lg py-3 pl-10 pr-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <label className="text-white/60 text-xs mb-1 block">Time</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+                    <input
+                      type="time"
+                      value={scheduleTime}
+                      onChange={(e) => setScheduleTime(e.target.value)}
+                      className="w-full bg-white/10 border border-white/10 rounded-lg py-3 pl-10 pr-3 text-white text-sm focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSchedule}
+                disabled={isPending || !scheduleDate || !scheduleTime}
+                className="w-full p-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-colors"
+              >
+                {isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Calendar className="h-5 w-5" />
+                )}
+                Schedule Tournament
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </motion.div>
   );
 }

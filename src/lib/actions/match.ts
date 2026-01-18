@@ -1060,9 +1060,9 @@ export async function resetBracket() {
 
 /**
  * Start the tournament (admin only)
- * Sets event_date to now so tournament is live for everyone
+ * Sets event_date to the specified time or now
  */
-export async function startTournament() {
+export async function startTournament(scheduledDate?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -1082,11 +1082,13 @@ export async function startTournament() {
     return { error: "Only admins can start the tournament" };
   }
 
-  // Set event_date to now
+  // Set event_date to scheduled time or now
+  const eventDate = scheduledDate || new Date().toISOString();
+
   const { error: updateError } = await supabase
     .from("tournament")
     .update({
-      event_date: new Date().toISOString(),
+      event_date: eventDate,
     } as never)
     .not("id", "is", null); // Update all rows (should be just one)
 
@@ -1098,7 +1100,7 @@ export async function startTournament() {
   revalidatePath("/dashboard");
   revalidatePath("/menu");
 
-  return { success: true };
+  return { success: true, eventDate };
 }
 
 /**

@@ -27,6 +27,7 @@ export default async function MenuPage() {
       } : null}
       team={team}
       isTournamentLive={isTournamentLive}
+      scheduledEventDate={tournamentStatus.eventDate}
     />
   );
 }

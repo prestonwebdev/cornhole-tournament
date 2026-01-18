@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { ensureBracketGenerated } from "./match";
 
 // Types for team with players
 export type PlayerInfo = {
@@ -193,6 +194,11 @@ export async function joinTeam(token: string) {
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
+  revalidatePath("/bracket");
+
+  // Regenerate bracket now that a new team is complete
+  await ensureBracketGenerated();
+
   return { success: true, teamId: teamData.id };
 }
 
@@ -270,6 +276,11 @@ export async function joinOpenTeam(teamId: string) {
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
+  revalidatePath("/bracket");
+
+  // Regenerate bracket now that a new team is complete
+  await ensureBracketGenerated();
+
   return { success: true, teamId: teamData.id };
 }
 
@@ -475,7 +486,11 @@ export async function removeTeammate(teamId: string) {
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
+  revalidatePath("/bracket");
   revalidatePath(`/team/${teamId}`);
+
+  // Regenerate bracket now that team is incomplete
+  await ensureBracketGenerated();
 
   return { success: true };
 }
@@ -569,7 +584,11 @@ export async function leaveTeam() {
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
+  revalidatePath("/bracket");
   revalidatePath("/menu");
+
+  // Regenerate bracket now that team composition changed
+  await ensureBracketGenerated();
 
   return { success: true };
 }

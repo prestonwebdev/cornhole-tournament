@@ -415,8 +415,8 @@ export async function completeMatch(matchId: string, scoreA: number, scoreB: num
 
   // Drop loser to consolation bracket if applicable
   if (match.next_loser_match_id) {
-    // Determine which slot based on position
-    const slot = match.position_in_round % 2 === 1 ? "team_a_id" : "team_b_id";
+    // Losers use opposite slot to avoid conflicts with consolation winners
+    const slot = match.position_in_round % 2 === 1 ? "team_b_id" : "team_a_id";
 
     await serviceClient
       .from("matches")
@@ -663,7 +663,11 @@ export async function ensureBracketGenerated() {
   console.log("[ensureBracketGenerated] Insert result:", insertedMatches?.length, "Error:", insertError);
 
   if (insertError) {
-    console.error("[ensureBracketGenerated] Insert error details:", insertError);
+    console.error("[ensureBracketGenerated] Insert error details:", JSON.stringify(insertError, null, 2));
+    console.error("[ensureBracketGenerated] Error message:", insertError.message);
+    console.error("[ensureBracketGenerated] Error code:", insertError.code);
+    console.error("[ensureBracketGenerated] Error hint:", insertError.hint);
+    console.error("[ensureBracketGenerated] Error details:", insertError.details);
     return { error: `Failed to create matches: ${insertError.message}` };
   }
 
@@ -955,10 +959,409 @@ function generateMatchStructure(
       status: "pending",
     });
 
+  } else if (bracketSize === 16) {
+    // 16-team bracket: 26 matches total
+    // Seed matchups: 1v16, 8v9, 4v13, 5v12, 2v15, 7v10, 3v14, 6v11
+    const seedMatchups = [[1, 16], [8, 9], [4, 13], [5, 12], [2, 15], [7, 10], [3, 14], [6, 11]];
+
+    // Winners Round 1 - m0 to m7
+    seedMatchups.forEach(([seedA, seedB], idx) => {
+      const teamA = getTeamBySeed(seedA);
+      const teamB = getTeamBySeed(seedB);
+      const nextWinnerIdx = 8 + Math.floor(idx / 2);  // m8, m8, m9, m9, m10, m10, m11, m11
+      const nextLoserIdx = 15 + Math.floor(idx / 2);  // m15, m15, m16, m16, m17, m17, m18, m18
+
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 1,
+        match_number: matchIndex + 1,
+        position_in_round: idx + 1,
+        team_a_id: teamA?.id || null,
+        team_b_id: teamB?.id || null,
+        next_winner_match_id: matchIds[nextWinnerIdx],
+        next_loser_match_id: matchIds[nextLoserIdx],
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    });
+
+    // Winners Round 2 (Quarters) - m8 to m11
+    for (let i = 0; i < 4; i++) {
+      const nextWinnerIdx = 12 + Math.floor(i / 2);  // m12, m12, m13, m13
+      const nextLoserIdx = 19 + Math.floor(i / 2);   // m19, m19, m20, m20
+
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 2,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[nextWinnerIdx],
+        next_loser_match_id: matchIds[nextLoserIdx],
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Winners Round 3 (Semis) - m12, m13
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 3,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[14], // Finals
+        next_loser_match_id: matchIds[21 + i], // Consolation R3
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Winners Finals - m14
+    matches.push({
+      id: matchIds[matchIndex],
+      tournament_id: tournamentId,
+      bracket_type: "winners",
+      round_number: 4,
+      match_number: matchIndex + 1,
+      position_in_round: 1,
+      team_a_id: null,
+      team_b_id: null,
+      next_winner_match_id: null,
+      next_loser_match_id: null,
+      is_finals: true,
+      status: "pending",
+    });
+    matchIndex++;
+
+    // Consolation Round 1 - m15 to m18 (losers from Winners R1)
+    for (let i = 0; i < 4; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 1,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[19 + Math.floor(i / 2)], // C-R2
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 2 - m19, m20 (C-R1 winners vs W-R2 losers)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 2,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[21 + i], // C-R3
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 3 - m21, m22 (C-R2 winners vs W-R3 losers)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 3,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[23], // C-R4
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 4 - m23
+    matches.push({
+      id: matchIds[matchIndex],
+      tournament_id: tournamentId,
+      bracket_type: "consolation",
+      round_number: 4,
+      match_number: matchIndex + 1,
+      position_in_round: 1,
+      team_a_id: null,
+      team_b_id: null,
+      next_winner_match_id: matchIds[24], // Consolation Finals
+      next_loser_match_id: null,
+      is_finals: false,
+      status: "pending",
+    });
+    matchIndex++;
+
+    // Consolation Finals - m24
+    matches.push({
+      id: matchIds[matchIndex],
+      tournament_id: tournamentId,
+      bracket_type: "consolation",
+      round_number: 5,
+      match_number: matchIndex + 1,
+      position_in_round: 1,
+      team_a_id: null,
+      team_b_id: null,
+      next_winner_match_id: null,
+      next_loser_match_id: null,
+      is_finals: true,
+      status: "pending",
+    });
+
+  } else if (bracketSize === 32) {
+    // 32-team bracket
+    // Seed matchups for 32 teams
+    const seedMatchups = [
+      [1, 32], [16, 17], [8, 25], [9, 24],
+      [4, 29], [13, 20], [5, 28], [12, 21],
+      [2, 31], [15, 18], [7, 26], [10, 23],
+      [3, 30], [14, 19], [6, 27], [11, 22]
+    ];
+
+    // Winners Round 1 - m0 to m15 (16 matches)
+    seedMatchups.forEach(([seedA, seedB], idx) => {
+      const teamA = getTeamBySeed(seedA);
+      const teamB = getTeamBySeed(seedB);
+      const nextWinnerIdx = 16 + Math.floor(idx / 2);  // m16-m23
+      const nextLoserIdx = 31 + Math.floor(idx / 2);   // m31-m38 (C-R1)
+
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 1,
+        match_number: matchIndex + 1,
+        position_in_round: idx + 1,
+        team_a_id: teamA?.id || null,
+        team_b_id: teamB?.id || null,
+        next_winner_match_id: matchIds[nextWinnerIdx],
+        next_loser_match_id: matchIds[nextLoserIdx],
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    });
+
+    // Winners Round 2 - m16 to m23 (8 matches)
+    for (let i = 0; i < 8; i++) {
+      const nextWinnerIdx = 24 + Math.floor(i / 2);  // m24-m27
+      const nextLoserIdx = 39 + Math.floor(i / 2);   // m39-m42 (C-R2)
+
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 2,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[nextWinnerIdx],
+        next_loser_match_id: matchIds[nextLoserIdx],
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Winners Round 3 (Quarters) - m24 to m27 (4 matches)
+    for (let i = 0; i < 4; i++) {
+      const nextWinnerIdx = 28 + Math.floor(i / 2);  // m28-m29
+      const nextLoserIdx = 43 + Math.floor(i / 2);   // m43-m44 (C-R3)
+
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 3,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[nextWinnerIdx],
+        next_loser_match_id: matchIds[nextLoserIdx],
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Winners Round 4 (Semis) - m28, m29 (2 matches)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "winners",
+        round_number: 4,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[30], // Finals
+        next_loser_match_id: matchIds[45 + i], // C-R4
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Winners Finals - m30
+    matches.push({
+      id: matchIds[matchIndex],
+      tournament_id: tournamentId,
+      bracket_type: "winners",
+      round_number: 5,
+      match_number: matchIndex + 1,
+      position_in_round: 1,
+      team_a_id: null,
+      team_b_id: null,
+      next_winner_match_id: null,
+      next_loser_match_id: null,
+      is_finals: true,
+      status: "pending",
+    });
+    matchIndex++;
+
+    // Consolation Round 1 - m31 to m38 (8 matches, losers from W-R1)
+    for (let i = 0; i < 8; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 1,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[39 + Math.floor(i / 2)], // C-R2
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 2 - m39 to m42 (4 matches)
+    for (let i = 0; i < 4; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 2,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[43 + Math.floor(i / 2)], // C-R3
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 3 - m43, m44 (2 matches)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 3,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[45 + i], // C-R4
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 4 - m45, m46 (2 matches)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 4,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[47], // C-R5
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Round 5 - m47
+    matches.push({
+      id: matchIds[matchIndex],
+      tournament_id: tournamentId,
+      bracket_type: "consolation",
+      round_number: 5,
+      match_number: matchIndex + 1,
+      position_in_round: 1,
+      team_a_id: null,
+      team_b_id: null,
+      next_winner_match_id: matchIds[48], // C-Finals
+      next_loser_match_id: null,
+      is_finals: false,
+      status: "pending",
+    });
+    matchIndex++;
+
+    // Consolation Finals - m48
+    matches.push({
+      id: matchIds[matchIndex],
+      tournament_id: tournamentId,
+      bracket_type: "consolation",
+      round_number: 6,
+      match_number: matchIndex + 1,
+      position_in_round: 1,
+      team_a_id: null,
+      team_b_id: null,
+      next_winner_match_id: null,
+      next_loser_match_id: null,
+      is_finals: true,
+      status: "pending",
+    });
+
   } else {
-    // For 16 and 32 team brackets, use similar pattern
-    // For now, fallback to 8-team structure (can be extended)
-    return generateMatchStructure(teams.slice(0, 8), tournamentId);
+    // Unsupported bracket size
+    throw new Error(`Unsupported bracket size: ${bracketSize}`);
   }
 
   // Process byes - auto-advance teams with no opponent in R1
@@ -983,8 +1386,9 @@ function generateMatchStructure(
 function getTotalMatchCount(bracketSize: number): number {
   if (bracketSize === 4) return 4;
   if (bracketSize === 8) return 12;
-  if (bracketSize === 16) return 26;
-  return 54; // 32 teams
+  if (bracketSize === 16) return 25; // 15 winners + 10 consolation
+  if (bracketSize === 32) return 49; // 31 winners + 18 consolation
+  throw new Error(`Unsupported bracket size: ${bracketSize}`);
 }
 
 /**

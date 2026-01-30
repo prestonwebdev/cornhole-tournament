@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/actions/auth";
 import { getUserTeam } from "@/lib/actions/team";
 import { getTournamentStatus } from "@/lib/actions/match";
@@ -6,16 +7,21 @@ import { MenuContent } from "@/components/menu/menu-content";
 export const dynamic = 'force-dynamic';
 
 export default async function MenuPage() {
-  const [profile, team, tournamentStatus] = await Promise.all([
+  const supabase = await createClient();
+
+  const [profile, team, tournamentStatus, tournamentData] = await Promise.all([
     getProfile(),
     getUserTeam(),
     getTournamentStatus(),
+    supabase.from("tournament").select("bracket_status").single(),
   ]);
 
   // Tournament is live if event_date is set and in the past
   const isTournamentLive = tournamentStatus.eventDate
     ? new Date(tournamentStatus.eventDate).getTime() <= Date.now()
     : false;
+
+  const bracketPublished = tournamentData.data?.bracket_status === "published";
 
   return (
     <MenuContent
@@ -28,6 +34,7 @@ export default async function MenuPage() {
       team={team}
       isTournamentLive={isTournamentLive}
       scheduledEventDate={tournamentStatus.eventDate}
+      bracketPublished={bracketPublished}
     />
   );
 }

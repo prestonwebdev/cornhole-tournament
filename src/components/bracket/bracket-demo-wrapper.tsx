@@ -3,12 +3,12 @@
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { FlaskConical, RotateCcw, Users, Plus, Minus, ChevronDown, Zap, Trash2 } from "lucide-react";
+import { FlaskConical, RotateCcw, Users, Plus, Minus, ChevronDown } from "lucide-react";
 import { useDemoMode } from "@/lib/hooks/use-demo-mode";
 import { useMockBracket, generateDynamicBracket } from "@/lib/test-data";
 import { mockTeams, mockProfiles } from "@/lib/test-data";
 import { BracketView } from "./bracket-view";
-import { startMatch, completeMatch, toggleBracketVisibility, resetBracket, resetMatchScore } from "@/lib/actions/match";
+import { startMatch, completeMatch, resetMatchScore } from "@/lib/actions/match";
 import type { Match } from "@/lib/types/database";
 
 type TeamInMatch = {
@@ -103,33 +103,11 @@ export function BracketDemoWrapper({
   const bracket = useMockBracket("4-team-fresh");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("t1");
   const [showTeamSelector, setShowTeamSelector] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   // Check if tournament has started based on event_date
   const tournamentHasStarted = eventDate
     ? new Date(eventDate).getTime() <= Date.now()
     : false;
-
-  const handleToggleVisibility = () => {
-    setError(null);
-    startTransition(async () => {
-      const result = await toggleBracketVisibility();
-      if (result.error) {
-        setError(result.error);
-      }
-    });
-  };
-
-  const handleResetBracket = () => {
-    setError(null);
-    startTransition(async () => {
-      const result = await resetBracket();
-      if (result.error) {
-        setError(result.error);
-      }
-    });
-  };
 
   // Generate preview bracket from registered teams
   const previewBracket = useMemo(() => {
@@ -371,56 +349,6 @@ export function BracketDemoWrapper({
           {bracketSize}-team consolation bracket
         </p>
       </div>
-
-      {/* Admin Controls */}
-      {isAdmin && (
-        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium text-sm">Admin Controls</p>
-              <p className="text-white/60 text-xs mt-0.5">
-                {bracketPublished
-                  ? "Bracket is visible to all players"
-                  : "Bracket is hidden from players"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleToggleVisibility}
-                disabled={isPending}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  bracketPublished
-                    ? "bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30 text-yellow-400"
-                    : "bg-green-500 hover:bg-green-600 text-white"
-                }`}
-              >
-                {bracketPublished ? (
-                  <>
-                    <Zap className="h-4 w-4" />
-                    {isPending ? "Updating..." : "Unpublish"}
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4" />
-                    {isPending ? "Updating..." : "Publish"}
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleResetBracket}
-                disabled={isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed text-red-400 text-sm font-medium rounded-lg transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                Reset
-              </button>
-            </div>
-          </div>
-          {error && (
-            <p className="text-red-400 text-xs mt-2">{error}</p>
-          )}
-        </div>
-      )}
 
       {/* Bracket View */}
       <BracketView

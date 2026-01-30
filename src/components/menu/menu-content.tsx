@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { motion } from "motion/react";
-import { User, Users, BookOpen, ChevronRight, FlaskConical, Zap, Loader2, Calendar, Clock } from "lucide-react";
+import { User, Users, BookOpen, ChevronRight, FlaskConical, Zap, Loader2, Calendar, Clock, Trash2, Eye, EyeOff } from "lucide-react";
 import { LeaveTeamButton } from "@/components/menu/leave-team-button";
 import { SignOutButton } from "@/components/menu/sign-out-button";
 import { RulesSheet } from "@/components/menu/rules-sheet";
 import { useDemoMode } from "@/lib/hooks/use-demo-mode";
-import { startTournament, stopTournament } from "@/lib/actions/match";
+import { startTournament, stopTournament, toggleBracketVisibility, resetBracket } from "@/lib/actions/match";
 import {
   Sheet,
   SheetContent,
@@ -40,9 +40,10 @@ interface MenuContentProps {
   team: Team | null;
   isTournamentLive?: boolean;
   scheduledEventDate?: string | null;
+  bracketPublished?: boolean;
 }
 
-export function MenuContent({ profile, team, isTournamentLive = false, scheduledEventDate }: MenuContentProps) {
+export function MenuContent({ profile, team, isTournamentLive = false, scheduledEventDate, bracketPublished = false }: MenuContentProps) {
   const [rulesSheetOpen, setRulesSheetOpen] = useState(false);
   const [scheduleSheetOpen, setScheduleSheetOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -73,6 +74,28 @@ export function MenuContent({ profile, team, isTournamentLive = false, scheduled
   const handleStopTournament = () => {
     startTransition(async () => {
       await stopTournament();
+    });
+  };
+
+  const [bracketError, setBracketError] = useState<string | null>(null);
+
+  const handleToggleBracketVisibility = () => {
+    setBracketError(null);
+    startTransition(async () => {
+      const result = await toggleBracketVisibility();
+      if (result.error) {
+        setBracketError(result.error);
+      }
+    });
+  };
+
+  const handleResetBracket = () => {
+    setBracketError(null);
+    startTransition(async () => {
+      const result = await resetBracket();
+      if (result.error) {
+        setBracketError(result.error);
+      }
     });
   };
 
@@ -117,7 +140,7 @@ export function MenuContent({ profile, team, isTournamentLive = false, scheduled
           visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
         }}
       >
-        <h1 className="text-2xl font-bold text-white">Menu</h1>
+        <h1 className="text-2xl font-bold text-white">More</h1>
       </motion.div>
 
       {/* Profile Card */}
@@ -261,6 +284,62 @@ export function MenuContent({ profile, team, isTournamentLive = false, scheduled
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Bracket Controls */}
+          <div className="p-4 border-b border-white/5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                {bracketPublished ? (
+                  <Eye className="h-5 w-5 text-green-400" />
+                ) : (
+                  <EyeOff className="h-5 w-5 text-white/60" />
+                )}
+                <div>
+                  <span className="text-white">Bracket Visibility</span>
+                  <p className="text-xs text-white/40">
+                    {bracketPublished ? "Visible to all players" : "Hidden from players"}
+                  </p>
+                </div>
+              </div>
+              {bracketPublished && (
+                <span className="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">
+                  PUBLIC
+                </span>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleToggleBracketVisibility}
+                disabled={isPending}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 ${
+                  bracketPublished
+                    ? "bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400"
+                    : "bg-green-500 hover:bg-green-600 text-white"
+                }`}
+              >
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : bracketPublished ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+                {bracketPublished ? "Unpublish" : "Publish Bracket"}
+              </button>
+              <button
+                onClick={handleResetBracket}
+                disabled={isPending}
+                className="py-2 px-4 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                Reset
+              </button>
+            </div>
+            {bracketError && (
+              <p className="text-red-400 text-xs mt-2">{bracketError}</p>
+            )}
           </div>
 
           {/* Demo Mode Toggle */}

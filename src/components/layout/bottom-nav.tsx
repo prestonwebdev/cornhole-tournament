@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { Home, Users, Trophy, Menu } from "lucide-react";
+import { Home, Users, Trophy, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/bracket", label: "Bracket", icon: Trophy },
-  { href: "/menu", label: "Menu", icon: Menu },
+  { href: "/menu", label: "More", icon: MoreHorizontal },
 ];
 
 export function BottomNav() {

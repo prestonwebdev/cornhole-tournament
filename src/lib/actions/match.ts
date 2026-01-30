@@ -667,8 +667,8 @@ export async function ensureBracketGenerated() {
     return { error: `Failed to create matches: ${insertError.message}` };
   }
 
-  revalidatePath("/bracket");
-  revalidatePath("/dashboard");
+  // Note: Don't call revalidatePath here - this function is called during page render
+  // which doesn't support revalidation. The page is already loading fresh data.
 
   return { success: true, matchCount: matchInserts.length };
 }

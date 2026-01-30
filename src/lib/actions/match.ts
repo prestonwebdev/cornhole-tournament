@@ -960,16 +960,20 @@ function generateMatchStructure(
     });
 
   } else if (bracketSize === 16) {
-    // 16-team bracket: 26 matches total
-    // Seed matchups: 1v16, 8v9, 4v13, 5v12, 2v15, 7v10, 3v14, 6v11
+    // 16-team bracket: 28 matches total (15 winners + 13 consolation)
+    // Full consolation: W-R2 losers drop to C-R2, W-R3 losers drop to C-R4
     const seedMatchups = [[1, 16], [8, 9], [4, 13], [5, 12], [2, 15], [7, 10], [3, 14], [6, 11]];
+
+    // Match index layout:
+    // W-R1: m0-m7 (8), W-R2: m8-m11 (4), W-R3: m12-m13 (2), W-Finals: m14 (1)
+    // C-R1: m15-m18 (4), C-R2: m19-m22 (4), C-R3: m23-m24 (2), C-R4: m25-m26 (2), C-Finals: m27 (1)
 
     // Winners Round 1 - m0 to m7
     seedMatchups.forEach(([seedA, seedB], idx) => {
       const teamA = getTeamBySeed(seedA);
       const teamB = getTeamBySeed(seedB);
-      const nextWinnerIdx = 8 + Math.floor(idx / 2);  // m8, m8, m9, m9, m10, m10, m11, m11
-      const nextLoserIdx = 15 + Math.floor(idx / 2);  // m15, m15, m16, m16, m17, m17, m18, m18
+      const nextWinnerIdx = 8 + Math.floor(idx / 2);  // m8-m11
+      const nextLoserIdx = 15 + Math.floor(idx / 2);  // m15-m18 (C-R1)
 
       matches.push({
         id: matchIds[matchIndex],
@@ -988,10 +992,10 @@ function generateMatchStructure(
       matchIndex++;
     });
 
-    // Winners Round 2 (Quarters) - m8 to m11
+    // Winners Round 2 - m8 to m11
     for (let i = 0; i < 4; i++) {
-      const nextWinnerIdx = 12 + Math.floor(i / 2);  // m12, m12, m13, m13
-      const nextLoserIdx = 19 + Math.floor(i / 2);   // m19, m19, m20, m20
+      const nextWinnerIdx = 12 + Math.floor(i / 2);  // m12-m13
+      const nextLoserIdx = 19 + i;  // m19-m22 (C-R2) - each W-R2 loser goes to separate C-R2 match
 
       matches.push({
         id: matchIds[matchIndex],
@@ -1022,7 +1026,7 @@ function generateMatchStructure(
         team_a_id: null,
         team_b_id: null,
         next_winner_match_id: matchIds[14], // Finals
-        next_loser_match_id: matchIds[21 + i], // Consolation R3
+        next_loser_match_id: matchIds[25 + i], // C-R4 (m25-m26)
         is_finals: false,
         status: "pending",
       });
@@ -1046,7 +1050,7 @@ function generateMatchStructure(
     });
     matchIndex++;
 
-    // Consolation Round 1 - m15 to m18 (losers from Winners R1)
+    // Consolation Round 1 - m15 to m18 (8 W-R1 losers → 4 matches)
     for (let i = 0; i < 4; i++) {
       matches.push({
         id: matchIds[matchIndex],
@@ -1057,7 +1061,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[19 + Math.floor(i / 2)], // C-R2
+        next_winner_match_id: matchIds[19 + i], // C-R2 (m19-m22)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1065,8 +1069,8 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 2 - m19, m20 (C-R1 winners vs W-R2 losers)
-    for (let i = 0; i < 2; i++) {
+    // Consolation Round 2 - m19 to m22 (4 C-R1 winners + 4 W-R2 losers → 4 matches)
+    for (let i = 0; i < 4; i++) {
       matches.push({
         id: matchIds[matchIndex],
         tournament_id: tournamentId,
@@ -1076,7 +1080,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[21 + i], // C-R3
+        next_winner_match_id: matchIds[23 + Math.floor(i / 2)], // C-R3 (m23-m24)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1084,7 +1088,7 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 3 - m21, m22 (C-R2 winners vs W-R3 losers)
+    // Consolation Round 3 - m23, m24 (4 C-R2 winners → 2 matches)
     for (let i = 0; i < 2; i++) {
       matches.push({
         id: matchIds[matchIndex],
@@ -1095,7 +1099,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[23], // C-R4
+        next_winner_match_id: matchIds[25 + i], // C-R4 (m25-m26)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1103,24 +1107,26 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 4 - m23
-    matches.push({
-      id: matchIds[matchIndex],
-      tournament_id: tournamentId,
-      bracket_type: "consolation",
-      round_number: 4,
-      match_number: matchIndex + 1,
-      position_in_round: 1,
-      team_a_id: null,
-      team_b_id: null,
-      next_winner_match_id: matchIds[24], // Consolation Finals
-      next_loser_match_id: null,
-      is_finals: false,
-      status: "pending",
-    });
-    matchIndex++;
+    // Consolation Round 4 - m25, m26 (2 C-R3 winners + 2 W-R3 losers → 2 matches)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 4,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[27], // C-Finals (m27)
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
 
-    // Consolation Finals - m24
+    // Consolation Finals - m27
     matches.push({
       id: matchIds[matchIndex],
       tournament_id: tournamentId,
@@ -1137,8 +1143,8 @@ function generateMatchStructure(
     });
 
   } else if (bracketSize === 32) {
-    // 32-team bracket
-    // Seed matchups for 32 teams
+    // 32-team bracket: 60 matches total (31 winners + 29 consolation)
+    // Full consolation: all winners bracket losers drop into consolation
     const seedMatchups = [
       [1, 32], [16, 17], [8, 25], [9, 24],
       [4, 29], [13, 20], [5, 28], [12, 21],
@@ -1146,7 +1152,11 @@ function generateMatchStructure(
       [3, 30], [14, 19], [6, 27], [11, 22]
     ];
 
-    // Winners Round 1 - m0 to m15 (16 matches)
+    // Match index layout:
+    // W-R1: m0-m15 (16), W-R2: m16-m23 (8), W-R3: m24-m27 (4), W-R4: m28-m29 (2), W-Finals: m30 (1)
+    // C-R1: m31-m38 (8), C-R2: m39-m46 (8), C-R3: m47-m50 (4), C-R4: m51-m54 (4), C-R5: m55-m56 (2), C-R6: m57-m58 (2), C-Finals: m59 (1)
+
+    // Winners Round 1 - m0 to m15
     seedMatchups.forEach(([seedA, seedB], idx) => {
       const teamA = getTeamBySeed(seedA);
       const teamB = getTeamBySeed(seedB);
@@ -1170,10 +1180,10 @@ function generateMatchStructure(
       matchIndex++;
     });
 
-    // Winners Round 2 - m16 to m23 (8 matches)
+    // Winners Round 2 - m16 to m23
     for (let i = 0; i < 8; i++) {
       const nextWinnerIdx = 24 + Math.floor(i / 2);  // m24-m27
-      const nextLoserIdx = 39 + Math.floor(i / 2);   // m39-m42 (C-R2)
+      const nextLoserIdx = 39 + i;  // m39-m46 (C-R2) - each W-R2 loser goes to separate C-R2 match
 
       matches.push({
         id: matchIds[matchIndex],
@@ -1192,10 +1202,10 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Winners Round 3 (Quarters) - m24 to m27 (4 matches)
+    // Winners Round 3 - m24 to m27
     for (let i = 0; i < 4; i++) {
       const nextWinnerIdx = 28 + Math.floor(i / 2);  // m28-m29
-      const nextLoserIdx = 43 + Math.floor(i / 2);   // m43-m44 (C-R3)
+      const nextLoserIdx = 51 + i;  // m51-m54 (C-R4)
 
       matches.push({
         id: matchIds[matchIndex],
@@ -1214,7 +1224,7 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Winners Round 4 (Semis) - m28, m29 (2 matches)
+    // Winners Round 4 (Semis) - m28, m29
     for (let i = 0; i < 2; i++) {
       matches.push({
         id: matchIds[matchIndex],
@@ -1226,7 +1236,7 @@ function generateMatchStructure(
         team_a_id: null,
         team_b_id: null,
         next_winner_match_id: matchIds[30], // Finals
-        next_loser_match_id: matchIds[45 + i], // C-R4
+        next_loser_match_id: matchIds[57 + i], // m57-m58 (C-R6)
         is_finals: false,
         status: "pending",
       });
@@ -1250,7 +1260,7 @@ function generateMatchStructure(
     });
     matchIndex++;
 
-    // Consolation Round 1 - m31 to m38 (8 matches, losers from W-R1)
+    // Consolation Round 1 - m31 to m38 (16 W-R1 losers → 8 matches)
     for (let i = 0; i < 8; i++) {
       matches.push({
         id: matchIds[matchIndex],
@@ -1261,7 +1271,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[39 + Math.floor(i / 2)], // C-R2
+        next_winner_match_id: matchIds[39 + i], // C-R2 (m39-m46)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1269,8 +1279,8 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 2 - m39 to m42 (4 matches)
-    for (let i = 0; i < 4; i++) {
+    // Consolation Round 2 - m39 to m46 (8 C-R1 winners + 8 W-R2 losers → 8 matches)
+    for (let i = 0; i < 8; i++) {
       matches.push({
         id: matchIds[matchIndex],
         tournament_id: tournamentId,
@@ -1280,7 +1290,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[43 + Math.floor(i / 2)], // C-R3
+        next_winner_match_id: matchIds[47 + Math.floor(i / 2)], // C-R3 (m47-m50)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1288,8 +1298,8 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 3 - m43, m44 (2 matches)
-    for (let i = 0; i < 2; i++) {
+    // Consolation Round 3 - m47 to m50 (8 C-R2 winners → 4 matches)
+    for (let i = 0; i < 4; i++) {
       matches.push({
         id: matchIds[matchIndex],
         tournament_id: tournamentId,
@@ -1299,7 +1309,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[45 + i], // C-R4
+        next_winner_match_id: matchIds[51 + i], // C-R4 (m51-m54)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1307,8 +1317,8 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 4 - m45, m46 (2 matches)
-    for (let i = 0; i < 2; i++) {
+    // Consolation Round 4 - m51 to m54 (4 C-R3 winners + 4 W-R3 losers → 4 matches)
+    for (let i = 0; i < 4; i++) {
       matches.push({
         id: matchIds[matchIndex],
         tournament_id: tournamentId,
@@ -1318,7 +1328,7 @@ function generateMatchStructure(
         position_in_round: i + 1,
         team_a_id: null,
         team_b_id: null,
-        next_winner_match_id: matchIds[47], // C-R5
+        next_winner_match_id: matchIds[55 + Math.floor(i / 2)], // C-R5 (m55-m56)
         next_loser_match_id: null,
         is_finals: false,
         status: "pending",
@@ -1326,29 +1336,50 @@ function generateMatchStructure(
       matchIndex++;
     }
 
-    // Consolation Round 5 - m47
-    matches.push({
-      id: matchIds[matchIndex],
-      tournament_id: tournamentId,
-      bracket_type: "consolation",
-      round_number: 5,
-      match_number: matchIndex + 1,
-      position_in_round: 1,
-      team_a_id: null,
-      team_b_id: null,
-      next_winner_match_id: matchIds[48], // C-Finals
-      next_loser_match_id: null,
-      is_finals: false,
-      status: "pending",
-    });
-    matchIndex++;
+    // Consolation Round 5 - m55, m56 (4 C-R4 winners → 2 matches)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 5,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[57 + i], // C-R6 (m57-m58)
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
 
-    // Consolation Finals - m48
+    // Consolation Round 6 - m57, m58 (2 C-R5 winners + 2 W-R4 losers → 2 matches)
+    for (let i = 0; i < 2; i++) {
+      matches.push({
+        id: matchIds[matchIndex],
+        tournament_id: tournamentId,
+        bracket_type: "consolation",
+        round_number: 6,
+        match_number: matchIndex + 1,
+        position_in_round: i + 1,
+        team_a_id: null,
+        team_b_id: null,
+        next_winner_match_id: matchIds[59], // C-Finals (m59)
+        next_loser_match_id: null,
+        is_finals: false,
+        status: "pending",
+      });
+      matchIndex++;
+    }
+
+    // Consolation Finals - m59
     matches.push({
       id: matchIds[matchIndex],
       tournament_id: tournamentId,
       bracket_type: "consolation",
-      round_number: 6,
+      round_number: 7,
       match_number: matchIndex + 1,
       position_in_round: 1,
       team_a_id: null,
@@ -1386,8 +1417,8 @@ function generateMatchStructure(
 function getTotalMatchCount(bracketSize: number): number {
   if (bracketSize === 4) return 4;
   if (bracketSize === 8) return 12;
-  if (bracketSize === 16) return 25; // 15 winners + 10 consolation
-  if (bracketSize === 32) return 49; // 31 winners + 18 consolation
+  if (bracketSize === 16) return 28; // 15 winners + 13 consolation
+  if (bracketSize === 32) return 60; // 31 winners + 29 consolation
   throw new Error(`Unsupported bracket size: ${bracketSize}`);
 }
 

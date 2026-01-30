@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function MenuPage() {
   const supabase = await createClient();
 
-  const [profile, team, tournamentStatus, tournamentData] = await Promise.all([
+  const [profile, team, tournamentStatus, tournamentResult] = await Promise.all([
     getProfile(),
     getUserTeam(),
     getTournamentStatus(),
@@ -21,7 +21,8 @@ export default async function MenuPage() {
     ? new Date(tournamentStatus.eventDate).getTime() <= Date.now()
     : false;
 
-  const bracketPublished = tournamentData.data?.bracket_status === "published";
+  const tournamentData = tournamentResult.data as { bracket_status: string } | null;
+  const bracketPublished = tournamentData?.bracket_status === "published";
 
   return (
     <MenuContent
